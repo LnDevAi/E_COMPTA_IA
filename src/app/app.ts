@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, RouterOutlet } from '@angular/router';
 import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { CompanyIdentityComponent } from './features/onboarding/company-identity.component';
+import { ChartOfAccountsComponent } from './features/chart-of-accounts/chart-of-accounts.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, DashboardComponent, CompanyIdentityComponent],
+  imports: [CommonModule, RouterModule, RouterOutlet, DashboardComponent, CompanyIdentityComponent, ChartOfAccountsComponent],
   template: `
     <div class="app-container">
       <!-- Sidebar Navigation -->
@@ -121,8 +122,11 @@ import { CompanyIdentityComponent } from './features/onboarding/company-identity
           <!-- Identité Entreprise -->
           <app-company-identity *ngIf="activeView() === 'identity'"></app-company-identity>
           
+          <!-- Plan Comptable -->
+          <app-chart-of-accounts *ngIf="activeView() === 'chart-accounts'"></app-chart-of-accounts>
+          
           <!-- Autres vues seront ajoutées ici -->
-          <div *ngIf="activeView() !== 'dashboard' && activeView() !== 'identity'" class="coming-soon">
+          <div *ngIf="activeView() !== 'dashboard' && activeView() !== 'identity' && activeView() !== 'chart-accounts'" class="coming-soon">
             <h2>{{ getViewTitle(activeView()) }}</h2>
             <p>Module en cours de développement...</p>
             <div class="progress-indicator">
@@ -396,8 +400,8 @@ export class App {
   getModuleProgress(view: string): number {
     const progress: Record<string, number> = {
       'dashboard': 100,
-      'identity': 15,
-      'chart-accounts': 10,
+      'identity': 100,
+      'chart-accounts': 100,
       'tiers': 5,
       'entries': 8,
       'ai-assistant': 20,

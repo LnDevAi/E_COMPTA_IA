@@ -1,0 +1,35 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "A FAIRE PLUS TARD",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LnDevAi/E_COMPTA_IA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LnDevAi/E_COMPTA_IA/issues"
+  },
+  "homepage": "https://github.com/LnDevAi/E_COMPTA_IA#readme",
+  "dependencies": {
+    "@angular/animations": "^20.1.4",
+    "@angular/cdk": "^20.1.4",
+    "@angular/cli": "^20.1.4",
+    "@angular/common": "^20.1.4",
+    "@angular/core": "^20.1.4",
+    "@angular/forms": "^20.1.4",
+    "@angular/material": "^20.1.4",
+    "@angular/platform-browser": "^20.1.4",
+    "@angular/platform-browser-dynamic": "^20.1.4",
+    "@angular/router": "^20.1.4",
+    "rxjs": "^7.8.2",
+    "typescript": "^5.9.2",
+    "zone.js": "^0.15.1"
+  }
+}

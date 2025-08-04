@@ -5,11 +5,12 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { CompanyIdentityComponent } from './features/onboarding/company-identity.component';
 import { ChartOfAccountsComponent } from './features/chart-of-accounts/chart-of-accounts.component';
 import { TiersManagementComponent } from './features/tiers/tiers-management.component';
+import { EntriesInputComponent } from './features/entries/entries-input.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterModule, RouterOutlet, DashboardComponent, CompanyIdentityComponent, ChartOfAccountsComponent, TiersManagementComponent],
+  imports: [CommonModule, RouterModule, RouterOutlet, DashboardComponent, CompanyIdentityComponent, ChartOfAccountsComponent, TiersManagementComponent, EntriesInputComponent],
   template: `
     <div class="app-container">
       <!-- Sidebar Navigation -->
@@ -129,8 +130,11 @@ import { TiersManagementComponent } from './features/tiers/tiers-management.comp
           <!-- Gestion Tiers -->
           <app-tiers-management *ngIf="activeView() === 'tiers'"></app-tiers-management>
           
+          <!-- Saisie Écritures -->
+          <app-entries-input *ngIf="activeView() === 'entries'"></app-entries-input>
+          
           <!-- Autres vues seront ajoutées ici -->
-          <div *ngIf="activeView() !== 'dashboard' && activeView() !== 'identity' && activeView() !== 'chart-accounts' && activeView() !== 'tiers'" class="coming-soon">
+          <div *ngIf="activeView() !== 'dashboard' && activeView() !== 'identity' && activeView() !== 'chart-accounts' && activeView() !== 'tiers' && activeView() !== 'entries'" class="coming-soon">
             <h2>{{ getViewTitle(activeView()) }}</h2>
             <p>Module en cours de développement...</p>
             <div class="progress-indicator">
@@ -406,8 +410,8 @@ export class App {
       'dashboard': 100,
       'identity': 100,
       'chart-accounts': 100,
-      'tiers': 100,
-      'entries': 8,
+          'tiers': 100,
+    'entries': 100,
       'ai-assistant': 20,
       'journals': 5,
       'ledgers': 5,

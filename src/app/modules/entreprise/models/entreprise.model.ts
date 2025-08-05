@@ -12,6 +12,8 @@ export interface Entreprise {
   ville: string;
   adresseComplete: string;
   systemeComptable: SystemeComptable;
+  specificitesFiscales: SpecificitesFiscales; // NOUVEAU
+  specificitesSociales: SpecificitesSociales; // NOUVEAU
   
   // Informations légales
   numeroRegistreCommerce?: string;
@@ -33,8 +35,8 @@ export interface Entreprise {
   // Documents
   documentsOfficiels: DocumentOfficiel[];
   
-  // Paramètres SYSCOHADA
-  monnaie: string; // FCFA, EUR, USD
+  // Paramètres SYSCOHADA/Autres
+  monnaie: string; // FCFA, EUR, USD, etc.
   tauxTVA: number;
   
   // Métadonnées
@@ -45,10 +47,90 @@ export interface Entreprise {
 }
 
 export interface SystemeComptable {
-  nom: string; // SYSCOHADA_AUDCIF, IFRS, US_GAAP, etc.
+  nom: string; // SYSCOHADA_AUDCIF, IFRS, US_GAAP, FRANCE_PCG, etc.
   version: string;
   dateApplication: Date;
   caracteristiques: string[];
+  espaceGeographique: 'OHADA' | 'IFRS' | 'US_GAAP' | 'FRANCE' | 'AUTRE'; // NOUVEAU
+}
+
+// NOUVEAU : Spécificités fiscales par pays
+export interface SpecificitesFiscales {
+  paysCode: string;
+  paysNom: string;
+  regimesTVA: RegimeTVA[];
+  tauxTVAStandard: number;
+  tauxTVAReduit?: number[];
+  declarationsTVA: FrequenceDeclaration[];
+  impotSocietes: ImpotSocietes;
+  autresImpots: AutreImpot[];
+  calendrierFiscal: EcheanceFiscale[];
+}
+
+// NOUVEAU : Spécificités sociales par pays  
+export interface SpecificitesSociales {
+  paysCode: string;
+  paysNom: string;
+  organismesSecurite: OrganismeSecurite[];
+  cotisationsSociales: CotisationSociale[];
+  declarationsSociales: FrequenceDeclaration[];
+  calendrierSocial: EcheanceSociale[];
+}
+
+export interface RegimeTVA {
+  nom: string;
+  seuilCA?: number;
+  taux: number;
+  description: string;
+}
+
+export interface FrequenceDeclaration {
+  type: 'MENSUEL' | 'TRIMESTRIEL' | 'ANNUEL';
+  echeance: string; // "15 du mois suivant", "fin janvier", etc.
+  obligatoire: boolean;
+}
+
+export interface ImpotSocietes {
+  taux: number;
+  seuilExoneration?: number;
+  acomptes: boolean;
+  echeances: string[];
+}
+
+export interface AutreImpot {
+  nom: string;
+  type: 'FORFAITAIRE' | 'PROPORTIONNEL';
+  taux?: number;
+  montantFixe?: number;
+  assiette: string;
+}
+
+export interface EcheanceFiscale {
+  nom: string;
+  date: string; // Format "15/01", "31/03", etc.
+  type: 'TVA' | 'IS' | 'AUTRE';
+  obligatoire: boolean;
+}
+
+export interface OrganismeSecurite {
+  nom: string;
+  acronyme: string;
+  typesCotisations: string[];
+}
+
+export interface CotisationSociale {
+  nom: string;
+  tauxEmployeur: number;
+  tauxEmploye: number;
+  plafond?: number;
+  assiette: string;
+}
+
+export interface EcheanceSociale {
+  nom: string;
+  date: string;
+  organisme: string;
+  obligatoire: boolean;
 }
 
 export interface RegimeFiscal {
@@ -56,6 +138,7 @@ export interface RegimeFiscal {
   description: string;
   seuilCA?: number;
   obligationsComptables: string[];
+  specificitesPays: any; // Spécificités du régime selon le pays
 }
 
 export interface ExerciceComptable {
@@ -115,23 +198,122 @@ export interface ControleIA {
   details?: any;
 }
 
-// Données de référence SYSCOHADA
-export const PAYS_SYSCOHADA = [
-  { code: 'BJ', nom: 'Bénin', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'BF', nom: 'Burkina Faso', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'CI', nom: 'Côte d\'Ivoire', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'GW', nom: 'Guinée-Bissau', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'ML', nom: 'Mali', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'NE', nom: 'Niger', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'SN', nom: 'Sénégal', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'TG', nom: 'Togo', monnaie: 'XOF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'CM', nom: 'Cameroun', monnaie: 'XAF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'CF', nom: 'République Centrafricaine', monnaie: 'XAF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'TD', nom: 'Tchad', monnaie: 'XAF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'CG', nom: 'Congo', monnaie: 'XAF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'GA', nom: 'Gabon', monnaie: 'XAF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'GQ', nom: 'Guinée Équatoriale', monnaie: 'XAF', systeme: 'SYSCOHADA_AUDCIF' },
-  { code: 'KM', nom: 'Comores', monnaie: 'KMF', systeme: 'SYSCOHADA_AUDCIF' }
+// DONNÉES CORRIGÉES : Tous pays OHADA = même système comptable AUDCIF
+export const PAYS_OHADA = [
+  { 
+    code: 'BJ', nom: 'Bénin', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'BENIN_FISCAL'
+  },
+  { 
+    code: 'BF', nom: 'Burkina Faso', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'BURKINA_FISCAL'
+  },
+  { 
+    code: 'CI', nom: 'Côte d\'Ivoire', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'COTE_IVOIRE_FISCAL'
+  },
+  { 
+    code: 'GW', nom: 'Guinée-Bissau', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'GUINEE_BISSAU_FISCAL'
+  },
+  { 
+    code: 'ML', nom: 'Mali', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'MALI_FISCAL'
+  },
+  { 
+    code: 'NE', nom: 'Niger', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'NIGER_FISCAL'
+  },
+  { 
+    code: 'SN', nom: 'Sénégal', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'SENEGAL_FISCAL'
+  },
+  { 
+    code: 'TG', nom: 'Togo', monnaie: 'XOF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'UEMOA',
+    fiscaliteSpecifique: 'TOGO_FISCAL'
+  },
+  { 
+    code: 'CM', nom: 'Cameroun', monnaie: 'XAF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'CEMAC',
+    fiscaliteSpecifique: 'CAMEROUN_FISCAL'
+  },
+  { 
+    code: 'CF', nom: 'République Centrafricaine', monnaie: 'XAF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'CEMAC',
+    fiscaliteSpecifique: 'CENTRAFRIQUE_FISCAL'
+  },
+  { 
+    code: 'TD', nom: 'Tchad', monnaie: 'XAF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'CEMAC',
+    fiscaliteSpecifique: 'TCHAD_FISCAL'
+  },
+  { 
+    code: 'CG', nom: 'Congo', monnaie: 'XAF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'CEMAC',
+    fiscaliteSpecifique: 'CONGO_FISCAL'
+  },
+  { 
+    code: 'GA', nom: 'Gabon', monnaie: 'XAF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'CEMAC',
+    fiscaliteSpecifique: 'GABON_FISCAL'
+  },
+  { 
+    code: 'GQ', nom: 'Guinée Équatoriale', monnaie: 'XAF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'CEMAC',
+    fiscaliteSpecifique: 'GUINEE_EQ_FISCAL'
+  },
+  { 
+    code: 'KM', nom: 'Comores', monnaie: 'KMF', 
+    systemeComptable: 'SYSCOHADA_AUDCIF',
+    unionMonetaire: 'INDEPENDANT',
+    fiscaliteSpecifique: 'COMORES_FISCAL'
+  }
+];
+
+// NOUVEAUX PAYS HORS OHADA (exemples)
+export const AUTRES_PAYS = [
+  {
+    code: 'FR', nom: 'France', monnaie: 'EUR',
+    systemeComptable: 'PCG_FRANCE',
+    fiscaliteSpecifique: 'FRANCE_FISCAL'
+  },
+  {
+    code: 'US', nom: 'États-Unis', monnaie: 'USD',
+    systemeComptable: 'US_GAAP',
+    fiscaliteSpecifique: 'USA_FISCAL'
+  },
+  {
+    code: 'MA', nom: 'Maroc', monnaie: 'MAD',
+    systemeComptable: 'CGNC_MAROC',
+    fiscaliteSpecifique: 'MAROC_FISCAL'
+  },
+  {
+    code: 'DZ', nom: 'Algérie', monnaie: 'DZD',
+    systemeComptable: 'SCF_ALGERIE',
+    fiscaliteSpecifique: 'ALGERIE_FISCAL'
+  }
 ];
 
 export const FORMES_JURIDIQUES = [

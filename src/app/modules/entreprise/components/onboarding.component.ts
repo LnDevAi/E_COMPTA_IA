@@ -3,7 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EntrepriseService } from '../services/entreprise.service';
 import { 
   Entreprise, 
-  PAYS_SYSCOHADA, 
+  PAYS_OHADA, 
+  AUTRES_PAYS,
   FORMES_JURIDIQUES, 
   SECTEURS_ACTIVITE,
   TypeDocument,
@@ -28,7 +29,7 @@ export class OnboardingComponent implements OnInit {
   
   // Données
   entreprise: Entreprise;
-  paysSyscohada = PAYS_SYSCOHADA;
+  tousLesPays = [...PAYS_OHADA, ...AUTRES_PAYS];
   formesJuridiques = FORMES_JURIDIQUES;
   secteursActivite = SECTEURS_ACTIVITE;
   
@@ -164,10 +165,13 @@ export class OnboardingComponent implements OnInit {
       this.entreprise.systemeComptable = this.entrepriseService.getSystemeComptableParPays(this.entreprise.pays);
       
       // Mise à jour automatique de la monnaie
-      const paysInfo = this.paysSyscohada.find(p => p.code === this.entreprise.pays);
+      const paysInfo = this.tousLesPays.find(p => p.code === this.entreprise.pays);
       if (paysInfo) {
         this.entreprise.monnaie = paysInfo.monnaie;
         this.formsEtapes[4].patchValue({ monnaie: paysInfo.monnaie });
+        
+        // Charger les spécificités fiscales du pays
+        this.entreprise.specificitesFiscales = this.entrepriseService.getSpecificitesFiscalesParPays(this.entreprise.pays);
       }
     }
   }

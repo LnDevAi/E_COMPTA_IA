@@ -2,14 +2,16 @@ import { Injectable } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { 
   Entreprise, 
-  PAYS_SYSCOHADA, 
+  PAYS_OHADA, 
+  AUTRES_PAYS,
   SystemeComptable, 
   DocumentOfficiel, 
   ValidationIA,
   ControleIA,
   StatutEntreprise,
   StatutValidation,
-  TypeDocument
+  TypeDocument,
+  SpecificitesFiscales
 } from '../models/entreprise.model';
 
 @Injectable({
@@ -21,40 +23,209 @@ export class EntrepriseService {
 
   constructor() { }
 
-  // Obtenir les pays SYSCOHADA
-  getPaysSyscohada(): Observable<any[]> {
-    return of(PAYS_SYSCOHADA);
+  // Obtenir tous les pays (OHADA + autres)
+  getTousLesPays(): Observable<any[]> {
+    return of([...PAYS_OHADA, ...AUTRES_PAYS]);
+  }
+
+  // Obtenir les pays OHADA spécifiquement
+  getPaysOHADA(): Observable<any[]> {
+    return of(PAYS_OHADA);
   }
 
   // Obtenir le système comptable selon le pays
   getSystemeComptableParPays(codePays: string): SystemeComptable {
-    const pays = PAYS_SYSCOHADA.find(p => p.code === codePays);
+    // Vérifier si pays OHADA
+    const paysOHADA = PAYS_OHADA.find(p => p.code === codePays);
     
-    if (pays) {
+    if (paysOHADA) {
       return {
         nom: 'SYSCOHADA AUDCIF',
         version: '2019',
         dateApplication: new Date('2019-01-01'),
         caracteristiques: [
-          'Plan comptable uniforme',
-          'États financiers normalisés',
+          'Plan comptable uniforme OHADA',
+          'États financiers normalisés AUDCIF',
           'Ratios financiers AUDCIF',
           'Consolidation des comptes',
           'Audit et contrôle interne'
-        ]
+        ],
+        espaceGeographique: 'OHADA'
       };
     }
     
-    // Système par défaut pour autres pays
+    // Vérifier autres pays
+    const autrePays = AUTRES_PAYS.find(p => p.code === codePays);
+    if (autrePays) {
+      switch (autrePays.systemeComptable) {
+        case 'PCG_FRANCE':
+          return {
+            nom: 'Plan Comptable Général (PCG) France',
+            version: '2014',
+            dateApplication: new Date('2014-01-01'),
+            caracteristiques: [
+              'Conformité normes françaises',
+              'États financiers français',
+              'Principes comptables français'
+            ],
+            espaceGeographique: 'FRANCE'
+          };
+        case 'US_GAAP':
+          return {
+            nom: 'US GAAP (Generally Accepted Accounting Principles)',
+            version: '2023',
+            dateApplication: new Date(),
+            caracteristiques: [
+              'Normes comptables américaines',
+              'SEC compliance',
+              'FASB standards'
+            ],
+            espaceGeographique: 'US_GAAP'
+          };
+        case 'CGNC_MAROC':
+          return {
+            nom: 'Code Général de Normalisation Comptable (CGNC)',
+            version: '1992',
+            dateApplication: new Date('1992-01-01'),
+            caracteristiques: [
+              'Normes comptables marocaines',
+              'Adaptation locale',
+              'Conformité fiscale Maroc'
+            ],
+            espaceGeographique: 'AUTRE'
+          };
+        default:
+          return {
+            nom: 'Système comptable local',
+            version: '2023',
+            dateApplication: new Date(),
+            caracteristiques: [
+              'Adaptation aux normes locales',
+              'Conformité réglementaire',
+              'Reporting local'
+            ],
+            espaceGeographique: 'AUTRE'
+          };
+      }
+    }
+    
+    // Système par défaut pour pays non référencés
     return {
-      nom: 'SYSCOHADA AUDCIF (Adapté)',
-      version: '2019',
+      nom: 'IFRS (International Financial Reporting Standards)',
+      version: '2023',
       dateApplication: new Date(),
       caracteristiques: [
-        'Adaptation aux normes locales',
-        'Conformité internationale',
-        'Reporting multicritères'
-      ]
+        'Normes comptables internationales',
+        'Harmonisation mondiale',
+        'Transparence financière'
+      ],
+      espaceGeographique: 'IFRS'
+    };
+  }
+
+  // NOUVEAU : Obtenir spécificités fiscales par pays
+  getSpecificitesFiscalesParPays(codePays: string): SpecificitesFiscales {
+    // Exemple pour quelques pays - À étendre selon besoins
+    const specificitesFiscales: { [key: string]: SpecificitesFiscales } = {
+      'CI': {
+        paysCode: 'CI',
+        paysNom: 'Côte d\'Ivoire',
+        regimesTVA: [
+          { nom: 'Régime Normal', taux: 18, seuilCA: 50000000, description: 'TVA 18% - Déclaration mensuelle' },
+          { nom: 'Régime Simplifié', taux: 18, seuilCA: 15000000, description: 'TVA 18% - Déclaration trimestrielle' }
+        ],
+        tauxTVAStandard: 18,
+        declarationsTVA: [
+          { type: 'MENSUEL', echeance: '15 du mois suivant', obligatoire: true },
+          { type: 'TRIMESTRIEL', echeance: '15 du mois suivant le trimestre', obligatoire: false }
+        ],
+        impotSocietes: {
+          taux: 25,
+          acomptes: true,
+          echeances: ['31/03', '30/06', '30/09', '31/12']
+        },
+        autresImpots: [
+          { nom: 'Taxe d\'apprentissage', type: 'PROPORTIONNEL', taux: 0.6, assiette: 'Masse salariale' },
+          { nom: 'Contribution FDFP', type: 'PROPORTIONNEL', taux: 1.2, assiette: 'Masse salariale' }
+        ],
+        calendrierFiscal: [
+          { nom: 'Déclaration TVA', date: '15/01', type: 'TVA', obligatoire: true },
+          { nom: 'Acompte IS', date: '31/03', type: 'IS', obligatoire: true }
+        ]
+      },
+      'SN': {
+        paysCode: 'SN',
+        paysNom: 'Sénégal',
+        regimesTVA: [
+          { nom: 'Régime Normal', taux: 18, seuilCA: 50000000, description: 'TVA 18% - Déclaration mensuelle' }
+        ],
+        tauxTVAStandard: 18,
+        declarationsTVA: [
+          { type: 'MENSUEL', echeance: '20 du mois suivant', obligatoire: true }
+        ],
+        impotSocietes: {
+          taux: 30,
+          acomptes: true,
+          echeances: ['31/03', '30/06', '30/09', '31/12']
+        },
+        autresImpots: [
+          { nom: 'Contribution Forfaitaire', type: 'FORFAITAIRE', montantFixe: 500000, assiette: 'Forfaitaire' }
+        ],
+        calendrierFiscal: [
+          { nom: 'Déclaration TVA', date: '20/01', type: 'TVA', obligatoire: true }
+        ]
+      },
+      'FR': {
+        paysCode: 'FR',
+        paysNom: 'France',
+        regimesTVA: [
+          { nom: 'Régime Normal', taux: 20, seuilCA: 85800, description: 'TVA 20% - Déclaration mensuelle' },
+          { nom: 'Micro-entreprise', taux: 0, seuilCA: 176200, description: 'Franchise en base' }
+        ],
+        tauxTVAStandard: 20,
+        tauxTVAReduit: [10, 5.5, 2.1],
+        declarationsTVA: [
+          { type: 'MENSUEL', echeance: '24 du mois suivant', obligatoire: true },
+          { type: 'TRIMESTRIEL', echeance: '24 du mois suivant le trimestre', obligatoire: false }
+        ],
+        impotSocietes: {
+          taux: 25,
+          seuilExoneration: 42500,
+          acomptes: true,
+          echeances: ['15/03', '15/06', '15/09', '15/12']
+        },
+        autresImpots: [
+          { nom: 'Taxe professionnelle', type: 'PROPORTIONNEL', taux: 1.5, assiette: 'Valeur locative' }
+        ],
+        calendrierFiscal: [
+          { nom: 'Déclaration TVA CA3', date: '24/01', type: 'TVA', obligatoire: true }
+        ]
+      }
+    };
+    
+    return specificitesFiscales[codePays] || this.getSpecificitesFiscalesParDefaut(codePays);
+  }
+
+  private getSpecificitesFiscalesParDefaut(codePays: string): SpecificitesFiscales {
+    const pays = [...PAYS_OHADA, ...AUTRES_PAYS].find(p => p.code === codePays);
+    
+    return {
+      paysCode: codePays,
+      paysNom: pays?.nom || 'Pays non référencé',
+      regimesTVA: [
+        { nom: 'Régime Standard', taux: 18, description: 'Régime TVA standard' }
+      ],
+      tauxTVAStandard: 18,
+      declarationsTVA: [
+        { type: 'MENSUEL', echeance: 'À définir selon réglementation locale', obligatoire: true }
+      ],
+      impotSocietes: {
+        taux: 25,
+        acomptes: false,
+        echeances: ['À définir']
+      },
+      autresImpots: [],
+      calendrierFiscal: []
     };
   }
 
@@ -83,23 +254,33 @@ export class EntrepriseService {
           recommandations.push('Compléter la raison sociale, forme juridique et secteur d\'activité');
         }
 
-        // Contrôle 2: Conformité SYSCOHADA
-        const paysSyscohada = PAYS_SYSCOHADA.find(p => p.code === entreprise.pays);
-        if (paysSyscohada) {
+        // Contrôle 2: Conformité système comptable
+        const paysOHADA = PAYS_OHADA.find(p => p.code === entreprise.pays);
+        if (paysOHADA) {
           controles.push({
             type: 'CONFORMITE_SYSCOHADA',
             resultat: 'CONFORME',
-            message: `Pays ${paysSyscohada.nom} conforme SYSCOHADA AUDCIF`
+            message: `Pays ${paysOHADA.nom} - Système SYSCOHADA AUDCIF conforme`
           });
           score += 25;
         } else {
-          controles.push({
-            type: 'CONFORMITE_SYSCOHADA',
-            resultat: 'ATTENTION',
-            message: 'Pays hors zone SYSCOHADA - adaptation nécessaire'
-          });
-          score += 10;
-          recommandations.push('Vérifier l\'adaptation du système comptable local');
+          const autrePays = AUTRES_PAYS.find(p => p.code === entreprise.pays);
+          if (autrePays) {
+            controles.push({
+              type: 'CONFORMITE_SYSTEME',
+              resultat: 'CONFORME',
+              message: `Système comptable ${autrePays.systemeComptable} adapté pour ${autrePays.nom}`
+            });
+            score += 20;
+          } else {
+            controles.push({
+              type: 'CONFORMITE_SYSTEME',
+              resultat: 'ATTENTION',
+              message: 'Pays non référencé - vérification manuelle requise'
+            });
+            score += 10;
+            recommandations.push('Vérifier la conformité du système comptable local');
+          }
         }
 
         // Contrôle 3: Documents légaux

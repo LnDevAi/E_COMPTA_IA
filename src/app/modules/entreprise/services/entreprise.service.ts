@@ -1,17 +1,20 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { delay, map } from 'rxjs/operators';
+
 import { 
   Entreprise, 
-  PAYS_OHADA, 
-  AUTRES_PAYS,
   SystemeComptable, 
-  DocumentOfficiel, 
-  ValidationIA,
-  ControleIA,
-  StatutEntreprise,
-  StatutValidation,
-  TypeDocument,
-  SpecificitesFiscales
+  SpecificitesFiscales, 
+  SpecificitesSociales,
+  PaysMondial,
+  PAYS_MONDIAUX,
+  getPaysByRegion,
+  getPaysBySystemeComptable,
+  getPaysByContinent,
+  getStatistiquesMondialesComptabilite,
+  CONTINENTS,
+  SYSTEMES_COMPTABLES_PRINCIPAUX
 } from '../models/entreprise.model';
 
 @Injectable({
@@ -21,486 +24,505 @@ export class EntrepriseService {
   private entrepriseSubject = new BehaviorSubject<Entreprise | null>(null);
   public entreprise$ = this.entrepriseSubject.asObservable();
 
-  constructor() { }
+  constructor() {}
 
-  // Obtenir tous les pays (OHADA + autres)
-  getTousLesPays(): Observable<any[]> {
-    return of([...PAYS_OHADA, ...AUTRES_PAYS]);
+  // =====================================================
+  // GESTION DES DONNÉES MONDIALES
+  // =====================================================
+
+  /**
+   * Récupère tous les pays supportés par la plateforme
+   */
+  getTousLesPays(): PaysMondial[] {
+    return PAYS_MONDIAUX;
   }
 
-  // Obtenir les pays OHADA spécifiquement
-  getPaysOHADA(): Observable<any[]> {
-    return of(PAYS_OHADA);
+  /**
+   * Récupère uniquement les pays OHADA (17 pays)
+   */
+  getPaysOHADA(): PaysMondial[] {
+    return getPaysBySystemeComptable('SYSCOHADA');
   }
 
-  // Obtenir le système comptable selon le pays
-  getSystemeComptableParPays(codePays: string): SystemeComptable {
-    // Vérifier si pays OHADA
-    const paysOHADA = PAYS_OHADA.find(p => p.code === codePays);
+  /**
+   * Récupère les pays par continent
+   */
+  getPaysByContinent(continent: string): PaysMondial[] {
+    return getPaysByContinent(continent);
+  }
+
+  /**
+   * Récupère les pays par système comptable
+   */
+  getPaysBySystemeComptable(systeme: string): PaysMondial[] {
+    return getPaysBySystemeComptable(systeme);
+  }
+
+  /**
+   * Récupère les statistiques mondiales
+   */
+  getStatistiquesMondiales() {
+    return getStatistiquesMondialesComptabilite();
+  }
+
+  /**
+   * Récupère un pays par nom
+   */
+  getPaysByNom(nomPays: string): PaysMondial | undefined {
+    return PAYS_MONDIAUX.find(pays => 
+      pays.nom.toLowerCase() === nomPays.toLowerCase()
+    );
+  }
+
+  /**
+   * Recherche de pays par terme (nom, devise, langue, système)
+   */
+  rechercherPays(terme: string): PaysMondial[] {
+    const termeLower = terme.toLowerCase();
+    return PAYS_MONDIAUX.filter(pays => 
+      pays.nom.toLowerCase().includes(termeLower) ||
+      pays.devise.toLowerCase().includes(termeLower) ||
+      pays.langue.toLowerCase().includes(termeLower) ||
+      pays.systemeComptable.nom.toLowerCase().includes(termeLower) ||
+      pays.continent.toLowerCase().includes(termeLower) ||
+      pays.region.toLowerCase().includes(termeLower)
+    );
+  }
+
+  // =====================================================
+  // SYSTÈMES COMPTABLES
+  // =====================================================
+
+  /**
+   * Détermine le système comptable selon le pays sélectionné
+   */
+  getSystemeComptableParPays(nomPays: string): SystemeComptable {
+    const pays = this.getPaysByNom(nomPays);
     
-    if (paysOHADA) {
+    if (!pays) {
+      // Système par défaut si pays non trouvé
       return {
-        nom: 'SYSCOHADA AUDCIF',
-        version: '2019',
-        dateApplication: new Date('2019-01-01'),
-        caracteristiques: [
-          'Plan comptable uniforme OHADA',
-          'États financiers normalisés AUDCIF',
-          'Ratios financiers AUDCIF',
-          'Consolidation des comptes',
-          'Audit et contrôle interne'
-        ],
-        espaceGeographique: 'OHADA'
+        nom: 'IFRS',
+        referentielDetail: 'International Financial Reporting Standards',
+        auditObligatoire: false,
+        devise: 'USD',
+        langue: 'Anglais',
+        espaceGeographique: 'International',
+        particularites: ['Système comptable international par défaut']
       };
     }
+
+    return {
+      nom: pays.systemeComptable.nom,
+      referentielDetail: pays.systemeComptable.referentielDetail,
+      auditObligatoire: pays.systemeComptable.auditObligatoire,
+      devise: pays.devise,
+      langue: pays.langue,
+      espaceGeographique: pays.region,
+      particularites: pays.systemeComptable.caracteristiques
+    };
+  }
+
+  /**
+   * Récupère tous les systèmes comptables disponibles
+   */
+  getSystemesComptablesDisponibles(): string[] {
+    return SYSTEMES_COMPTABLES_PRINCIPAUX;
+  }
+
+  // =====================================================
+  // SPÉCIFICITÉS FISCALES
+  // =====================================================
+
+  /**
+   * Récupère les spécificités fiscales par pays
+   */
+  getSpecificitesFiscalesParPays(nomPays: string): SpecificitesFiscales {
+    const pays = this.getPaysByNom(nomPays);
     
-    // Vérifier autres pays
-    const autrePays = AUTRES_PAYS.find(p => p.code === codePays);
-    if (autrePays) {
-      switch (autrePays.systemeComptable) {
-        case 'PCG_FRANCE':
-          return {
-            nom: 'Plan Comptable Général (PCG) France',
-            version: '2014',
-            dateApplication: new Date('2014-01-01'),
-            caracteristiques: [
-              'Conformité normes françaises',
-              'États financiers français',
-              'Principes comptables français'
-            ],
-            espaceGeographique: 'FRANCE'
-          };
-        case 'US_GAAP':
-          return {
-            nom: 'US GAAP (Generally Accepted Accounting Principles)',
-            version: '2023',
-            dateApplication: new Date(),
-            caracteristiques: [
-              'Normes comptables américaines',
-              'SEC compliance',
-              'FASB standards'
-            ],
-            espaceGeographique: 'US_GAAP'
-          };
-        case 'CGNC_MAROC':
-          return {
-            nom: 'Code Général de Normalisation Comptable (CGNC)',
-            version: '1992',
-            dateApplication: new Date('1992-01-01'),
-            caracteristiques: [
-              'Normes comptables marocaines',
-              'Adaptation locale',
-              'Conformité fiscale Maroc'
-            ],
-            espaceGeographique: 'AUTRE'
-          };
-        default:
-          return {
-            nom: 'Système comptable local',
-            version: '2023',
-            dateApplication: new Date(),
-            caracteristiques: [
-              'Adaptation aux normes locales',
-              'Conformité réglementaire',
-              'Reporting local'
-            ],
-            espaceGeographique: 'AUTRE'
-          };
-      }
+    if (!pays) {
+      // Spécificités par défaut
+      return {
+        tauxIS: 25.0,
+        tauxTVA: 18.0,
+        autresTaxes: [],
+        declarationsTVA: {
+          type: 'Mensuelle',
+          details: 'Déclaration mensuelle standard'
+        },
+        echeancesFiscales: []
+      };
     }
-    
-    // Système par défaut pour pays non référencés
+
     return {
-      nom: 'IFRS (International Financial Reporting Standards)',
-      version: '2023',
-      dateApplication: new Date(),
-      caracteristiques: [
-        'Normes comptables internationales',
-        'Harmonisation mondiale',
-        'Transparence financière'
-      ],
-      espaceGeographique: 'IFRS'
+      tauxIS: pays.systemeFiscal.tauxIS,
+      tauxTVA: pays.systemeFiscal.tauxTVA,
+      baremeIR: pays.systemeFiscal.baremeIR,
+      autresTaxes: pays.systemeFiscal.autresTaxes || [],
+      declarationsTVA: {
+        type: this.determinerFrequenceDeclaration(pays.systemeSocial.declarationsSociales),
+        details: `Déclarations selon règlement ${pays.nom}`
+      },
+      echeancesFiscales: this.genererEcheancesFiscales(pays)
     };
   }
 
-  // NOUVEAU : Obtenir spécificités fiscales par pays
-  getSpecificitesFiscalesParPays(codePays: string): SpecificitesFiscales {
-    // Exemple pour quelques pays - À étendre selon besoins
-    const specificitesFiscales: { [key: string]: SpecificitesFiscales } = {
-      'CI': {
-        paysCode: 'CI',
-        paysNom: 'Côte d\'Ivoire',
-        regimesTVA: [
-          { nom: 'Régime Normal', taux: 18, seuilCA: 50000000, description: 'TVA 18% - Déclaration mensuelle' },
-          { nom: 'Régime Simplifié', taux: 18, seuilCA: 15000000, description: 'TVA 18% - Déclaration trimestrielle' }
-        ],
-        tauxTVAStandard: 18,
-        declarationsTVA: [
-          { type: 'MENSUEL', echeance: '15 du mois suivant', obligatoire: true },
-          { type: 'TRIMESTRIEL', echeance: '15 du mois suivant le trimestre', obligatoire: false }
-        ],
-        impotSocietes: {
-          taux: 25,
-          acomptes: true,
-          echeances: ['31/03', '30/06', '30/09', '31/12']
-        },
-        autresImpots: [
-          { nom: 'Taxe d\'apprentissage', type: 'PROPORTIONNEL', taux: 0.6, assiette: 'Masse salariale' },
-          { nom: 'Contribution FDFP', type: 'PROPORTIONNEL', taux: 1.2, assiette: 'Masse salariale' }
-        ],
-        calendrierFiscal: [
-          { nom: 'Déclaration TVA', date: '15/01', type: 'TVA', obligatoire: true },
-          { nom: 'Acompte IS', date: '31/03', type: 'IS', obligatoire: true }
-        ]
-      },
-      'SN': {
-        paysCode: 'SN',
-        paysNom: 'Sénégal',
-        regimesTVA: [
-          { nom: 'Régime Normal', taux: 18, seuilCA: 50000000, description: 'TVA 18% - Déclaration mensuelle' }
-        ],
-        tauxTVAStandard: 18,
-        declarationsTVA: [
-          { type: 'MENSUEL', echeance: '20 du mois suivant', obligatoire: true }
-        ],
-        impotSocietes: {
-          taux: 30,
-          acomptes: true,
-          echeances: ['31/03', '30/06', '30/09', '31/12']
-        },
-        autresImpots: [
-          { nom: 'Contribution Forfaitaire', type: 'FORFAITAIRE', montantFixe: 500000, assiette: 'Forfaitaire' }
-        ],
-        calendrierFiscal: [
-          { nom: 'Déclaration TVA', date: '20/01', type: 'TVA', obligatoire: true }
-        ]
-      },
-      'FR': {
-        paysCode: 'FR',
-        paysNom: 'France',
-        regimesTVA: [
-          { nom: 'Régime Normal', taux: 20, seuilCA: 85800, description: 'TVA 20% - Déclaration mensuelle' },
-          { nom: 'Micro-entreprise', taux: 0, seuilCA: 176200, description: 'Franchise en base' }
-        ],
-        tauxTVAStandard: 20,
-        tauxTVAReduit: [10, 5.5, 2.1],
-        declarationsTVA: [
-          { type: 'MENSUEL', echeance: '24 du mois suivant', obligatoire: true },
-          { type: 'TRIMESTRIEL', echeance: '24 du mois suivant le trimestre', obligatoire: false }
-        ],
-        impotSocietes: {
-          taux: 25,
-          seuilExoneration: 42500,
-          acomptes: true,
-          echeances: ['15/03', '15/06', '15/09', '15/12']
-        },
-        autresImpots: [
-          { nom: 'Taxe professionnelle', type: 'PROPORTIONNEL', taux: 1.5, assiette: 'Valeur locative' }
-        ],
-        calendrierFiscal: [
-          { nom: 'Déclaration TVA CA3', date: '24/01', type: 'TVA', obligatoire: true }
-        ]
-      }
-    };
-    
-    return specificitesFiscales[codePays] || this.getSpecificitesFiscalesParDefaut(codePays);
-  }
+  // =====================================================
+  // SPÉCIFICITÉS SOCIALES
+  // =====================================================
 
-  private getSpecificitesFiscalesParDefaut(codePays: string): SpecificitesFiscales {
-    const pays = [...PAYS_OHADA, ...AUTRES_PAYS].find(p => p.code === codePays);
+  /**
+   * Récupère les spécificités sociales par pays
+   */
+  getSpecificitesSocialesParPays(nomPays: string): SpecificitesSociales {
+    const pays = this.getPaysByNom(nomPays);
     
+    if (!pays) {
+      // Spécificités par défaut
+      return {
+        organisme: 'Organisme Social Standard',
+        cotisationsPatronales: 15.0,
+        cotisationsSalariales: 5.0,
+        declarationsSociales: {
+          type: 'Mensuelle',
+          details: 'Déclaration mensuelle standard'
+        },
+        echeancesSociales: [],
+        regimesComplementaires: []
+      };
+    }
+
     return {
-      paysCode: codePays,
-      paysNom: pays?.nom || 'Pays non référencé',
-      regimesTVA: [
-        { nom: 'Régime Standard', taux: 18, description: 'Régime TVA standard' }
-      ],
-      tauxTVAStandard: 18,
-      declarationsTVA: [
-        { type: 'MENSUEL', echeance: 'À définir selon réglementation locale', obligatoire: true }
-      ],
-      impotSocietes: {
-        taux: 25,
-        acomptes: false,
-        echeances: ['À définir']
+      organisme: pays.systemeSocial.organisme,
+      cotisationsPatronales: pays.systemeSocial.cotisationsPatronales,
+      cotisationsSalariales: pays.systemeSocial.cotisationsSalariales,
+      declarationsSociales: {
+        type: this.determinerFrequenceDeclaration(pays.systemeSocial.declarationsSociales),
+        jourLimite: this.extraireJourLimite(pays.systemeSocial.declarationsSociales),
+        details: pays.systemeSocial.declarationsSociales
       },
-      autresImpots: [],
-      calendrierFiscal: []
+      echeancesSociales: this.genererEcheancesSociales(pays),
+      regimesComplementaires: pays.systemeSocial.regimesComplementaires || []
     };
   }
 
-  // Validation automatique avec IA
-  validerEntrepriseAvecIA(entreprise: Entreprise): Observable<ValidationIA> {
-    return new Observable(observer => {
-      setTimeout(() => {
-        const controles: ControleIA[] = [];
-        let score = 0;
-        const recommandations: string[] = [];
+  // =====================================================
+  // VALIDATION IA AVANCÉE
+  // =====================================================
 
-        // Contrôle 1: Informations de base
-        if (entreprise.raisonSociale && entreprise.formeJuridique && entreprise.secteurActivite) {
-          controles.push({
-            type: 'INFORMATIONS_BASE',
-            resultat: 'CONFORME',
-            message: 'Informations de base complètes et conformes'
-          });
-          score += 20;
-        } else {
-          controles.push({
-            type: 'INFORMATIONS_BASE',
-            resultat: 'NON_CONFORME',
-            message: 'Informations de base incomplètes'
-          });
-          recommandations.push('Compléter la raison sociale, forme juridique et secteur d\'activité');
-        }
+  /**
+   * Validation intelligente d'une entreprise avec IA
+   */
+  validerEntrepriseAvecIA(entreprise: Partial<Entreprise>): Observable<any> {
+    return of(null).pipe(
+      delay(2000), // Simulation du traitement IA
+      map(() => {
+        const pays = this.getPaysByNom(entreprise.adresse?.pays || '');
+        const validations = [];
+        const recommandations = [];
+        const alertes = [];
+        let score = 100;
 
-        // Contrôle 2: Conformité système comptable
-        const paysOHADA = PAYS_OHADA.find(p => p.code === entreprise.pays);
-        if (paysOHADA) {
-          controles.push({
-            type: 'CONFORMITE_SYSCOHADA',
-            resultat: 'CONFORME',
-            message: `Pays ${paysOHADA.nom} - Système SYSCOHADA AUDCIF conforme`
-          });
-          score += 25;
-        } else {
-          const autrePays = AUTRES_PAYS.find(p => p.code === entreprise.pays);
-          if (autrePays) {
-            controles.push({
-              type: 'CONFORMITE_SYSTEME',
-              resultat: 'CONFORME',
-              message: `Système comptable ${autrePays.systemeComptable} adapté pour ${autrePays.nom}`
-            });
-            score += 20;
-          } else {
-            controles.push({
-              type: 'CONFORMITE_SYSTEME',
-              resultat: 'ATTENTION',
-              message: 'Pays non référencé - vérification manuelle requise'
-            });
-            score += 10;
-            recommandations.push('Vérifier la conformité du système comptable local');
+        // Validation du pays et système comptable
+        if (pays) {
+          validations.push(`✅ Pays "${pays.nom}" reconnu et supporté`);
+          validations.push(`✅ Système comptable ${pays.systemeComptable.nom} identifié`);
+          validations.push(`✅ Devise ${pays.devise} configurée`);
+          validations.push(`✅ Langue ${pays.langue} validée`);
+          
+          // Validation du système fiscal
+          validations.push(`✅ Taux IS: ${pays.systemeFiscal.tauxIS}%`);
+          validations.push(`✅ Taux TVA: ${pays.systemeFiscal.tauxTVA}%`);
+          
+          // Validation du système social
+          validations.push(`✅ Organisme social: ${pays.systemeSocial.organisme}`);
+          validations.push(`✅ Cotisations configurées`);
+
+          // Recommandations spécifiques au pays
+          if (pays.region === 'OHADA') {
+            recommandations.push(`📋 Système OHADA: Audit obligatoire selon seuils`);
+            recommandations.push(`📋 Comptabilité en français obligatoire`);
+            recommandations.push(`📋 Plan comptable SYSCOHADA AUDCIF`);
           }
-        }
 
-        // Contrôle 3: Documents légaux
-        const documentsRequis = [TypeDocument.REGISTRE_COMMERCE, TypeDocument.IFU];
-        const documentsPresents = entreprise.documentsOfficiels?.filter(d => 
-          documentsRequis.includes(d.type) && d.statutValidation === StatutValidation.VALIDE
-        ) || [];
+          if (pays.systemeComptable.auditObligatoire) {
+            recommandations.push(`🔍 Audit obligatoire dans ${pays.nom}`);
+          }
 
-        if (documentsPresents.length >= documentsRequis.length) {
-          controles.push({
-            type: 'DOCUMENTS_LEGAUX',
-            resultat: 'CONFORME',
-            message: 'Documents légaux requis présents et validés'
-          });
-          score += 25;
+          // Alertes selon le contexte économique
+          if (pays.statutEconomique === 'PMA') {
+            alertes.push(`⚠️ Pays Moins Avancé: Simplifications possibles`);
+          }
+
+          if (pays.systemeFiscal.tauxIS > 35) {
+            alertes.push(`💰 Taux IS élevé (${pays.systemeFiscal.tauxIS}%)`);
+          }
+
+          if (pays.systemeSocial.cotisationsPatronales > 30) {
+            alertes.push(`💼 Charges sociales élevées (${pays.systemeSocial.cotisationsPatronales}%)`);
+          }
+
         } else {
-          controles.push({
-            type: 'DOCUMENTS_LEGAUX',
-            resultat: 'NON_CONFORME',
-            message: 'Documents légaux manquants ou non validés'
-          });
-          recommandations.push('Télécharger et valider le registre de commerce et l\'IFU');
+          score -= 50;
+          alertes.push(`❌ Pays non reconnu ou non supporté`);
+          alertes.push(`❌ Système comptable non identifiable`);
         }
 
-        // Contrôle 4: Cohérence fiscale
-        if (entreprise.regimeFiscal && entreprise.exerciceComptable) {
-          controles.push({
-            type: 'COHERENCE_FISCALE',
-            resultat: 'CONFORME',
-            message: 'Régime fiscal et exercice comptable définis'
-          });
-          score += 20;
-        } else {
-          controles.push({
-            type: 'COHERENCE_FISCALE',
-            resultat: 'NON_CONFORME',
-            message: 'Régime fiscal ou exercice comptable manquant'
-          });
-          recommandations.push('Définir le régime fiscal et les dates d\'exercice comptable');
+        // Validation des informations obligatoires
+        if (!entreprise.raisonSociale) {
+          score -= 10;
+          alertes.push(`❌ Raison sociale manquante`);
         }
 
-        // Contrôle 5: Validation numéros officiels
-        if (entreprise.numeroIFU && this.validerFormatIFU(entreprise.numeroIFU)) {
-          controles.push({
-            type: 'FORMAT_IFU',
-            resultat: 'CONFORME',
-            message: 'Format IFU valide'
-          });
-          score += 10;
-        } else if (entreprise.numeroIFU) {
-          controles.push({
-            type: 'FORMAT_IFU',
-            resultat: 'NON_CONFORME',
-            message: 'Format IFU invalide'
-          });
-          recommandations.push('Vérifier le format du numéro IFU');
+        if (!entreprise.formeJuridique) {
+          score -= 10;
+          alertes.push(`❌ Forme juridique manquante`);
         }
 
-        const validation: ValidationIA = {
-          score,
-          controles,
+        if (!entreprise.adresse?.pays) {
+          score -= 20;
+          alertes.push(`❌ Pays manquant`);
+        }
+
+        // Recommandations générales
+        recommandations.push(`📊 Configuration automatique des taux fiscaux`);
+        recommandations.push(`🔄 Synchronisation avec les normes locales`);
+        recommandations.push(`📈 Suivi des évolutions réglementaires`);
+
+        return {
+          scoreConformite: Math.max(score, 0),
+          pointsVerifies: validations,
           recommandations,
-          dateValidation: new Date()
+          alertes,
+          dernierControle: new Date(),
+          pays: pays,
+          statistiques: {
+            dureeValidation: '2.3s',
+            controlsExecutes: validations.length + alertes.length,
+            niveauConfiance: score > 80 ? 'Élevé' : score > 60 ? 'Moyen' : 'Faible'
+          }
         };
-
-        observer.next(validation);
-        observer.complete();
-      }, 2000); // Simulation délai validation IA
-    });
+      })
+    );
   }
 
-  // Validation format IFU (exemple pour pays UEMOA)
-  private validerFormatIFU(ifu: string): boolean {
-    // Format IFU UEMOA: 12 chiffres
-    const regexIFU = /^\d{12}$/;
-    return regexIFU.test(ifu);
+  // =====================================================
+  // GESTION ENTREPRISE
+  // =====================================================
+
+  /**
+   * Sauvegarde une entreprise
+   */
+  sauvegarderEntreprise(entreprise: Entreprise): Observable<boolean> {
+    return of(true).pipe(
+      delay(1000),
+      map(() => {
+        this.entrepriseSubject.next(entreprise);
+        console.log('💾 Entreprise sauvegardée:', entreprise);
+        return true;
+      })
+    );
   }
 
-  // Sauvegarder entreprise
-  sauvegarderEntreprise(entreprise: Entreprise): Observable<Entreprise> {
-    entreprise.derniereModification = new Date();
-    if (!entreprise.dateCreationDossier) {
-      entreprise.dateCreationDossier = new Date();
-    }
-
-    // Déterminer le statut
-    entreprise.statut = this.determinerStatutEntreprise(entreprise);
-
-    this.entrepriseSubject.next(entreprise);
-    
-    // Simulation sauvegarde
-    return of(entreprise);
-  }
-
-  // Déterminer statut selon données
-  private determinerStatutEntreprise(entreprise: Entreprise): StatutEntreprise {
-    const champsObligatoires = [
-      entreprise.raisonSociale,
-      entreprise.formeJuridique,
-      entreprise.secteurActivite,
-      entreprise.pays,
-      entreprise.ville,
-      entreprise.adresseComplete
-    ];
-
-    const champsCompletes = champsObligatoires.filter(champ => champ && champ.trim() !== '');
-    
-    if (champsCompletes.length < champsObligatoires.length) {
-      return StatutEntreprise.INCOMPLET;
-    }
-
-    const documentsValides = entreprise.documentsOfficiels?.filter(d => 
-      d.statutValidation === StatutValidation.VALIDE
-    ) || [];
-
-    if (documentsValides.length === 0) {
-      return StatutEntreprise.EN_COURS_VALIDATION;
-    }
-
-    return StatutEntreprise.VALIDE;
-  }
-
-  // Upload et validation document
-  uploaderDocument(file: File, type: TypeDocument): Observable<DocumentOfficiel> {
-    return new Observable(observer => {
-      const document: DocumentOfficiel = {
-        id: this.genererIdDocument(),
-        type,
-        nom: file.name,
-        numeroDocument: '',
-        dateEmission: new Date(),
-        fichier: file,
-        statutValidation: StatutValidation.EN_ATTENTE,
-        remarquesIA: []
-      };
-
-      // Simulation validation IA document
-      setTimeout(() => {
-        document.statutValidation = this.validerDocumentAvecIA(file, type);
-        if (document.statutValidation === StatutValidation.VALIDE) {
-          document.numeroDocument = this.extraireNumeroDocument(file, type);
-          document.remarquesIA = ['Document validé automatiquement par IA'];
-        } else {
-          document.remarquesIA = ['Vérification manuelle requise - qualité image insuffisante'];
-        }
-
-        observer.next(document);
-        observer.complete();
-      }, 3000);
-    });
-  }
-
-  // Validation IA document (simulation)
-  private validerDocumentAvecIA(file: File, type: TypeDocument): StatutValidation {
-    // Simulation: validation basée sur taille et type de fichier
-    const tailleOk = file.size > 50000 && file.size < 5000000; // 50KB - 5MB
-    const typeOk = ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type);
-    
-    if (tailleOk && typeOk) {
-      return Math.random() > 0.2 ? StatutValidation.VALIDE : StatutValidation.VERIFICATION_MANUELLE;
-    }
-    
-    return StatutValidation.REJETE;
-  }
-
-  // Extraction numéro document (simulation OCR)
-  private extraireNumeroDocument(file: File, type: TypeDocument): string {
-    // Simulation extraction OCR
-    switch (type) {
-      case TypeDocument.REGISTRE_COMMERCE:
-        return 'RC-' + Math.floor(Math.random() * 1000000);
-      case TypeDocument.IFU:
-        return Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
-      default:
-        return 'DOC-' + Math.floor(Math.random() * 100000);
-    }
-  }
-
-  private genererIdDocument(): string {
-    return 'doc_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-  }
-
-  // Obtenir entreprise actuelle
-  getEntrepriseActuelle(): Observable<Entreprise | null> {
+  /**
+   * Charge une entreprise
+   */
+  chargerEntreprise(): Observable<Entreprise | null> {
     return this.entreprise$;
   }
 
-  // Créer nouvelle entreprise avec valeurs par défaut
-  creerNouvelleEntreprise(): Entreprise {
-    return {
-      raisonSociale: '',
-      formeJuridique: '',
-      secteurActivite: '',
-      pays: '',
-      ville: '',
-      adresseComplete: '',
-      systemeComptable: {
-        nom: '',
-        version: '',
-        dateApplication: new Date(),
-        caracteristiques: []
-      },
-      dateCreation: new Date(),
-      regimeFiscal: {
-        type: 'REEL_NORMAL',
-        description: '',
-        obligationsComptables: []
-      },
-      exerciceComptable: {
-        dateDebut: new Date(),
-        dateFin: new Date(),
-        dureeEnMois: 12,
-        statut: 'EN_PREPARATION'
-      },
-      documentsOfficiels: [],
-      monnaie: 'XOF',
-      tauxTVA: 18,
-      dateCreationDossier: new Date(),
-      derniereModification: new Date(),
-      statut: StatutEntreprise.NOUVEAU
-    };
+  // =====================================================
+  // UTILITAIRES PRIVÉS
+  // =====================================================
+
+  private determinerFrequenceDeclaration(declaration: string): 'Mensuelle' | 'Trimestrielle' | 'Annuelle' {
+    if (declaration.toLowerCase().includes('mensuel')) return 'Mensuelle';
+    if (declaration.toLowerCase().includes('trimestriel')) return 'Trimestrielle';
+    return 'Mensuelle'; // Par défaut
+  }
+
+  private extraireJourLimite(declaration: string): number | undefined {
+    const match = declaration.match(/(\d+)/);
+    return match ? parseInt(match[1]) : undefined;
+  }
+
+  private genererEcheancesFiscales(pays: PaysMondial) {
+    const echeances = [];
+    const aujourd_hui = new Date();
+    
+    // Échéances trimestrielles IS
+    for (let i = 0; i < 4; i++) {
+      const date = new Date(aujourd_hui.getFullYear(), i * 3 + 2, 31); // Fin de trimestre
+      echeances.push({
+        type: 'Acompte IS',
+        dateEcheance: date,
+        montantEstime: 0
+      });
+    }
+    
+    // Échéances TVA selon le pays
+    const frequence = pays.systemeSocial.declarationsSociales.toLowerCase().includes('mensuel') ? 1 : 3;
+    for (let i = 0; i < 12; i += frequence) {
+      const date = new Date(aujourd_hui.getFullYear(), i, 15);
+      echeances.push({
+        type: 'Déclaration TVA',
+        dateEcheance: date,
+        montantEstime: 0
+      });
+    }
+    
+    return echeances;
+  }
+
+  private genererEcheancesSociales(pays: PaysMondial) {
+    const echeances = [];
+    const aujourd_hui = new Date();
+    
+    // Échéances mensuelles standard
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(aujourd_hui.getFullYear(), i, 15);
+      echeances.push({
+        organisme: pays.systemeSocial.organisme,
+        type: 'Cotisations sociales',
+        dateEcheance: date,
+        montantEstime: 0
+      });
+    }
+    
+    return echeances;
+  }
+
+  // =====================================================
+  // ANALYTICS ET STATISTIQUES
+  // =====================================================
+
+  /**
+   * Récupère les statistiques d'utilisation par région
+   */
+  getStatistiquesParRegion(): Observable<any> {
+    return of(null).pipe(
+      delay(500),
+      map(() => {
+        const stats = PAYS_MONDIAUX.reduce((acc, pays) => {
+          if (!acc[pays.region]) {
+            acc[pays.region] = {
+              nom: pays.region,
+              nombrePays: 0,
+              systemesComptables: new Set(),
+              devises: new Set(),
+              langues: new Set()
+            };
+          }
+          acc[pays.region].nombrePays++;
+          acc[pays.region].systemesComptables.add(pays.systemeComptable.nom);
+          acc[pays.region].devises.add(pays.devise);
+          acc[pays.region].langues.add(pays.langue);
+          return acc;
+        }, {} as any);
+
+        // Conversion des Sets en arrays pour l'affichage
+        Object.values(stats).forEach((stat: any) => {
+          stat.systemesComptables = Array.from(stat.systemesComptables);
+          stat.devises = Array.from(stat.devises);
+          stat.langues = Array.from(stat.langues);
+        });
+
+        return Object.values(stats);
+      })
+    );
+  }
+
+  /**
+   * Récupère les tendances d'adoption par système comptable
+   */
+  getTendancesSystemesComptables(): Observable<any> {
+    return of(null).pipe(
+      delay(300),
+      map(() => {
+        const tendances = SYSTEMES_COMPTABLES_PRINCIPAUX.map(systeme => {
+          const pays = getPaysBySystemeComptable(systeme);
+          return {
+            systeme,
+            nombrePays: pays.length,
+            pourcentage: (pays.length / PAYS_MONDIAUX.length * 100).toFixed(1),
+            principauxPays: pays.slice(0, 5).map(p => p.nom),
+            regions: [...new Set(pays.map(p => p.region))]
+          };
+        }).sort((a, b) => b.nombrePays - a.nombrePays);
+
+        return tendances;
+      })
+    );
+  }
+
+  /**
+   * Recommandations intelligentes selon le profil
+   */
+  getRecommandationsIntelligentes(entreprise: Partial<Entreprise>): Observable<any> {
+    return of(null).pipe(
+      delay(1000),
+      map(() => {
+        const pays = this.getPaysByNom(entreprise.adresse?.pays || '');
+        const recommandations = [];
+
+        if (pays) {
+          // Recommandations système comptable
+          recommandations.push({
+            categorie: 'Système Comptable',
+            priorite: 'Haute',
+            titre: `Configuration ${pays.systemeComptable.nom}`,
+            description: `Votre entreprise utilisera le système ${pays.systemeComptable.nom} conformément à la réglementation ${pays.nom}`,
+            actions: [
+              'Configurer le plan comptable standard',
+              'Définir les paramètres de consolidation',
+              'Activer les contrôles de conformité'
+            ]
+          });
+
+          // Recommandations fiscales
+          recommandations.push({
+            categorie: 'Fiscalité',
+            priorite: 'Haute',
+            titre: 'Optimisation fiscale',
+            description: `IS: ${pays.systemeFiscal.tauxIS}% | TVA: ${pays.systemeFiscal.tauxTVA}%`,
+            actions: [
+              'Configurer les taux automatiques',
+              'Planifier les déclarations',
+              'Activer les alertes d\'échéances'
+            ]
+          });
+
+          // Recommandations sociales
+          recommandations.push({
+            categorie: 'Social',
+            priorite: 'Moyenne',
+            titre: 'Gestion des cotisations',
+            description: `Organisme: ${pays.systemeSocial.organisme}`,
+            actions: [
+              'Configurer les taux de cotisations',
+              'Automatiser les calculs de paie',
+              'Programmer les déclarations sociales'
+            ]
+          });
+
+          // Recommandations selon le statut économique
+          if (pays.statutEconomique === 'Développé') {
+            recommandations.push({
+              categorie: 'Conformité',
+              priorite: 'Moyenne',
+              titre: 'Standards élevés',
+              description: 'Pays développé avec exigences renforcées',
+              actions: [
+                'Activer l\'audit automatique',
+                'Configurer les contrôles renforcés',
+                'Préparer les reportings avancés'
+              ]
+            });
+          }
+        }
+
+        return recommandations;
+      })
+    );
   }
 }

@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Fichier Excel - Systèmes Comptables Mondiaux</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        .content {
+            padding: 40px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .download-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        .preview-table th, .preview-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .preview-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .preview-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .info-section {
+            background: #e3f2fd;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid #2196f3;
+        }
+        .info-section h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Systèmes Comptables Mondiaux</h1>
+            <p>Base de données complète des systèmes comptables, fiscaux et sociaux par pays</p>
+        </div>
+        
+        <div class="content">
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number">195</div>
+                    <div class="stat-label">Pays couverts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">17</div>
+                    <div class="stat-label">Pays OHADA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">54</div>
+                    <div class="stat-label">Pays africains</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Formats de fichier</div>
+                </div>
+            </div>
+
+            <div class="download-section">
+                <h2>📁 Télécharger les fichiers</h2>
+                <button class="btn" onclick="generateExcel()">📊 Télécharger Excel (.xlsx)</button>
+                <button class="btn" onclick="generateCSV()">📋 Télécharger CSV</button>
+                <button class="btn" onclick="downloadSQL()">🗄️ Télécharger Script SQL</button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Génération du fichier en cours...</p>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>ℹ️ Structure des données</h3>
+                <p><strong>Chaque pays contient :</strong></p>
+                <ul>
+                    <li><strong>Système Comptable:</strong> Référentiel utilisé (IFRS, SYSCOHADA, US GAAP, etc.)</li>
+                    <li><strong>Système Fiscal:</strong> Taux IS, TVA, IR et autres taxes importantes</li>
+                    <li><strong>Système Social:</strong> Cotisations patronales/salariales, organismes, déclarations</li>
+                    <li><strong>Informations générales:</strong> Continent, région, devise, langue officielle</li>
+                </ul>
+            </div>
+
+            <h3>📋 Aperçu des données</h3>
+            <table class="preview-table" id="previewTable">
+                <thead>
+                    <tr>
+                        <th>Pays</th>
+                        <th>Continent</th>
+                        <th>Région</th>
+                        <th>Système Comptable</th>
+                        <th>IS (%)</th>
+                        <th>TVA (%)</th>
+                        <th>Cotisations Patronales (%)</th>
+                        <th>Cotisations Salariales (%)</th>
+                    </tr>
+                </thead>
+                <tbody id="previewBody">
+                    <!-- Les données seront ajoutées dynamiquement -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Base de données complète des pays
+        const paysData = [
+            // PAYS OHADA
+            {
+                pays: "Bénin", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Acte uniforme OHADA",
+                is_taux: 30, tva_taux: 18, ir_bareme: "Progressive", autres_taxes: "IRVM: 10%, TPU: 0.5%",
+                organisme_social: "CNSS", cotisations_patronales: 16.4, cotisations_salariales: 3.6,
+                declaration_sociale: "Mensuelle", particularites: "Système harmonisé OHADA"
+            },
+            {
+                pays: "Burkina Faso", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Plan comptable général harmonisé",
+                is_taux: 27.5, tva_taux: 18, ir_bareme: "Progressive", autres_taxes: "IUTS: Progressive, CSI: 2%",
+                organisme_social: "CNSS", cotisations_patronales: 16.75, cotisations_salariales: 5.5,
+                declaration_sociale: "Trimestrielle", particularites: "Contribution secteur informel"
+            },
+            {
+                pays: "Cameroun", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Plan comptable général des entreprises",
+                is_taux: 30, tva_taux: 19.25, ir_bareme: "10-35%", autres_taxes: "Centimes communaux: 10%",
+                organisme_social: "CNPS", cotisations_patronales: 16.2, cotisations_salariales: 4.2,
+                declaration_sociale: "Mensuelle avant le 15", particularites: "Système normal et minimal"
+            },
+            {
+                pays: "Centrafrique", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Normes OHADA",
+                is_taux: 30, tva_taux: 19, ir_bareme: "Progressive", autres_taxes: "Patente: Variable",
+                organisme_social: "ACSS", cotisations_patronales: 16, cotisations_salariales: 4,
+                declaration_sociale: "Mensuelle", particularites: "Application des normes OHADA"
+            },
+            {
+                pays: "Comores", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français/Arabe",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Adopté en 2005",
+                is_taux: 35, tva_taux: 10, ir_bareme: "Progressive", autres_taxes: "Impôt salaires: 1%",
+                organisme_social: "CSSC", cotisations_patronales: 15, cotisations_salariales: 3.5,
+                declaration_sociale: "Trimestrielle", particularites: "Adoption récente SYSCOHADA"
+            },
+            {
+                pays: "Congo", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Acte uniforme OHADA",
+                is_taux: 30, tva_taux: 18, ir_bareme: "1-40%", autres_taxes: "IRCM: 20%",
+                organisme_social: "CNSS", cotisations_patronales: 16.5, cotisations_salariales: 4,
+                declaration_sociale: "Mensuelle", particularites: "Audit obligatoire selon seuils"
+            },
+            {
+                pays: "Côte d'Ivoire", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "PCGE - 3 systèmes selon taille",
+                is_taux: 25, tva_taux: 18, ir_bareme: "Progressive", autres_taxes: "IRVM: 10%, CN: 1%",
+                organisme_social: "CNPS", cotisations_patronales: 16.4, cotisations_salariales: 6.3,
+                declaration_sociale: "Mensuelle avant le 10", particularites: "Système selon taille entreprise"
+            },
+            {
+                pays: "Gabon", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Plan comptable harmonisé",
+                is_taux: 30, tva_taux: 18, ir_bareme: "5-35%", autres_taxes: "TVAI: 18%",
+                organisme_social: "CNSS", cotisations_patronales: 20.15, cotisations_salariales: 4.5,
+                declaration_sociale: "Mensuelle", particularites: "CAC obligatoire selon seuils"
+            },
+            {
+                pays: "Guinée", continent: "Afrique", region: "OHADA", devise: "GNF", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Adopté en 2000",
+                is_taux: 35, tva_taux: 18, ir_bareme: "5-40%", autres_taxes: "TAF: 5%",
+                organisme_social: "CNSS", cotisations_patronales: 18, cotisations_salariales: 5,
+                declaration_sociale: "Trimestrielle", particularites: "Comptabilité en français obligatoire"
+            },
+            {
+                pays: "Guinée-Bissau", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Portugais",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Membre depuis 1997",
+                is_taux: 25, tva_taux: 17, ir_bareme: "Progressive", autres_taxes: "IC: 3%",
+                organisme_social: "INPS", cotisations_patronales: 7, cotisations_salariales: 3,
+                declaration_sociale: "Mensuelle", particularites: "Application progressive"
+            },
+            {
+                pays: "Guinée Équatoriale", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Espagnol",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Plan comptable espagnol/français",
+                is_taux: 35, tva_taux: 15, ir_bareme: "Progressive", autres_taxes: "Impôt hydrocarbures",
+                organisme_social: "INSESO", cotisations_patronales: 21.5, cotisations_salariales: 4.5,
+                declaration_sociale: "Mensuelle", particularites: "Adapté secteur pétrolier"
+            },
+            {
+                pays: "Mali", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Système normal ou trésorerie",
+                is_taux: 30, tva_taux: 18, ir_bareme: "0-40%", autres_taxes: "IBIC: 30%",
+                organisme_social: "INPS", cotisations_patronales: 18.6, cotisations_salariales: 5.4,
+                declaration_sociale: "Mensuelle avant le 10", particularites: "Deux systèmes comptables"
+            },
+            {
+                pays: "Niger", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Plan comptable harmonisé",
+                is_taux: 30, tva_taux: 19, ir_bareme: "0-35%", autres_taxes: "TP: 18%",
+                organisme_social: "CNSS", cotisations_patronales: 17.8, cotisations_salariales: 1,
+                declaration_sociale: "Trimestrielle", particularites: "Bilan et compte résultat obligatoires"
+            },
+            {
+                pays: "Sénégal", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "PCGE + comptes consolidés",
+                is_taux: 30, tva_taux: 18, ir_bareme: "0-40%", autres_taxes: "CFCE: 3%",
+                organisme_social: "CSS", cotisations_patronales: 21.7, cotisations_salariales: 5.6,
+                declaration_sociale: "Mensuelle", particularites: "Consolidation obligatoire groupes"
+            },
+            {
+                pays: "Tchad", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "Plan comptable général",
+                is_taux: 40, tva_taux: 18, ir_bareme: "2-60%", autres_taxes: "Taxe sociétés pétrolières",
+                organisme_social: "CNSS", cotisations_patronales: 16.5, cotisations_salariales: 3.5,
+                declaration_sociale: "Mensuelle", particularites: "CAC selon seuils, secteur pétrolier"
+            },
+            {
+                pays: "Togo", continent: "Afrique", region: "OHADA", devise: "FCFA", langue: "Français",
+                systeme_comptable: "SYSCOHADA", referentiel_detail: "3 systèmes selon taille",
+                is_taux: 27, tva_taux: 18, ir_bareme: "5-45%", autres_taxes: "AP: 1.5% CA",
+                organisme_social: "CNSS", cotisations_patronales: 16.5, cotisations_salariales: 4,
+                declaration_sociale: "Mensuelle avant le 15", particularites: "Normal, allégé, trésorerie"
+            },
+
+            // AUTRES PAYS AFRICAINS
+            {
+                pays: "Afrique du Sud", continent: "Afrique", region: "Afrique Australe", devise: "ZAR", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + Companies Act 2008",
+                is_taux: 27, tva_taux: 15, ir_bareme: "18-45%", autres_taxes: "Withholding Tax: 20%",
+                organisme_social: "SARS", cotisations_patronales: 3, cotisations_salariales: 2,
+                declaration_sociale: "Mensuelle SARS", particularites: "UIF: 2%, SDL: 1%, WC: variable"
+            },
+            {
+                pays: "Algérie", continent: "Afrique", region: "Afrique du Nord", devise: "DZD", langue: "Arabe",
+                systeme_comptable: "SCF", referentiel_detail: "Système Comptable Financier basé IFRS",
+                is_taux: 25, tva_taux: 19, ir_bareme: "0-35%", autres_taxes: "TAP: 2%",
+                organisme_social: "CNAS", cotisations_patronales: 26, cotisations_salariales: 9,
+                declaration_sociale: "Mensuelle", particularites: "Plan comptes national + consolidation"
+            },
+            {
+                pays: "Angola", continent: "Afrique", region: "Afrique Centrale", devise: "AOA", langue: "Portugais",
+                systeme_comptable: "PGC", referentiel_detail: "Plan Général Comptabilité inspiré IFRS",
+                is_taux: 30, tva_taux: 14, ir_bareme: "0-17%", autres_taxes: "Imposto Selo: 0.2%",
+                organisme_social: "INSS", cotisations_patronales: 8, cotisations_salariales: 3,
+                declaration_sociale: "Mensuelle", particularites: "Comptes en kwanza obligatoires"
+            },
+            {
+                pays: "Botswana", continent: "Afrique", region: "Afrique Australe", devise: "BWP", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS cotées + BAS + Companies Act 2003",
+                is_taux: 22, tva_taux: 12, ir_bareme: "0-25%", autres_taxes: "Withholding Tax: 10%",
+                organisme_social: "Limité", cotisations_patronales: 0, cotisations_salariales: 0,
+                declaration_sociale: "PAYE mensuelle", particularites: "Workmen's Compensation uniquement"
+            },
+            {
+                pays: "Égypte", continent: "Afrique", region: "Afrique du Nord", devise: "EGP", langue: "Arabe",
+                systeme_comptable: "EAS", referentiel_detail: "Egyptian Accounting Standards alignées IFRS",
+                is_taux: 22.5, tva_taux: 14, ir_bareme: "0-25%", autres_taxes: "Stamp Tax: 0.4%",
+                organisme_social: "NSIA", cotisations_patronales: 18.75, cotisations_salariales: 11,
+                declaration_sociale: "Mensuelle", particularites: "Loi comptable 91/2005"
+            },
+            {
+                pays: "Éthiopie", continent: "Afrique", region: "Afrique de l'Est", devise: "ETB", langue: "Amharique",
+                systeme_comptable: "EAAS", referentiel_detail: "Ethiopian Standards basées IFRS",
+                is_taux: 30, tva_taux: 15, ir_bareme: "0-35%", autres_taxes: "Excise Tax variable",
+                organisme_social: "ESSA", cotisations_patronales: 11, cotisations_salariales: 7,
+                declaration_sociale: "Système récent 2011", particularites: "Commercial Code 1960 révisé"
+            },
+            {
+                pays: "Ghana", continent: "Afrique", region: "Afrique de l'Ouest", devise: "GHS", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + GNAS + Companies Act 2019",
+                is_taux: 25, tva_taux: 17.5, ir_bareme: "0-25%", autres_taxes: "VAT+NHIL+GETFund: 17.5%",
+                organisme_social: "SSNIT", cotisations_patronales: 13, cotisations_salariales: 5.5,
+                declaration_sociale: "Mensuelle", particularites: "Withholding Tax: 8%"
+            },
+            {
+                pays: "Kenya", continent: "Afrique", region: "Afrique de l'Est", devise: "KES", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + PBES + Companies Act 2015",
+                is_taux: 30, tva_taux: 16, ir_bareme: "10-30%", autres_taxes: "Withholding Tax: 5-20%",
+                organisme_social: "NSSF", cotisations_patronales: 0, cotisations_salariales: 0,
+                declaration_sociale: "Mensuelle iTax", particularites: "NSSF + NHIF variables"
+            },
+            {
+                pays: "Libye", continent: "Afrique", region: "Afrique du Nord", devise: "LYD", langue: "Arabe",
+                systeme_comptable: "Libyen", referentiel_detail: "Système basé principes arabes",
+                is_taux: 20, tva_taux: 0, ir_bareme: "Progressive", autres_taxes: "Jihad Tax",
+                organisme_social: "SSF", cotisations_patronales: 15, cotisations_salariales: 3.75,
+                declaration_sociale: "Système perturbé", particularites: "Loi 116/1973, adaptation IFRS"
+            },
+            {
+                pays: "Madagascar", continent: "Afrique", region: "Afrique de l'Est", devise: "MGA", langue: "Français",
+                systeme_comptable: "PCG 2005", referentiel_detail: "Inspiré français + IFRS",
+                is_taux: 20, tva_taux: 20, ir_bareme: "5-24%", autres_taxes: "IS: 5% petites entreprises",
+                organisme_social: "CNaPS", cotisations_patronales: 13, cotisations_salariales: 1,
+                declaration_sociale: "Trimestrielle", particularites: "Consolidation obligatoire groupes"
+            },
+            {
+                pays: "Maroc", continent: "Afrique", region: "Afrique du Nord", devise: "MAD", langue: "Arabe",
+                systeme_comptable: "CGNC", referentiel_detail: "Code Normalisation + transition IFRS",
+                is_taux: 31, tva_taux: 20, ir_bareme: "0-38%", autres_taxes: "CSS: 2.5%",
+                organisme_social: "CNSS", cotisations_patronales: 20.48, cotisations_salariales: 4.48,
+                declaration_sociale: "DAMANCOM mensuelle", particularites: "Loi 9-88"
+            },
+            {
+                pays: "Maurice", continent: "Afrique", region: "Afrique de l'Est", devise: "MUR", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + MAS + Companies Act 2001",
+                is_taux: 15, tva_taux: 15, ir_bareme: "0-25%", autres_taxes: "GBL: 15%",
+                organisme_social: "NSF", cotisations_patronales: 2.5, cotisations_salariales: 0,
+                declaration_sociale: "Variable", particularites: "CSG: 2.5%, Training: 1%"
+            },
+            {
+                pays: "Mozambique", continent: "Afrique", region: "Afrique Australe", devise: "MZN", langue: "Portugais",
+                systeme_comptable: "PGC", referentiel_detail: "Plan Général basé IFRS",
+                is_taux: 32, tva_taux: 17, ir_bareme: "10-32%", autres_taxes: "IRN: 3%",
+                organisme_social: "INSS", cotisations_patronales: 7, cotisations_salariales: 3,
+                declaration_sociale: "Mensuelle", particularites: "Loi comptable 2007"
+            },
+            {
+                pays: "Namibie", continent: "Afrique", region: "Afrique Australe", devise: "NAD", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + Companies Act 2004",
+                is_taux: 32, tva_taux: 15, ir_bareme: "0-37%", autres_taxes: "Withholding Tax: 10%",
+                organisme_social: "SSC", cotisations_patronales: 2.7, cotisations_salariales: 0,
+                declaration_sociale: "Mensuelle", particularites: "Maternity: 0.9%, Development: 1.8%"
+            },
+            {
+                pays: "Nigeria", continent: "Afrique", region: "Afrique de l'Ouest", devise: "NGN", langue: "Anglais",
+                systeme_comptable: "NAS", referentiel_detail: "Nigerian Standards basées IFRS",
+                is_taux: 30, tva_taux: 7.5, ir_bareme: "7-24%", autres_taxes: "Education Tax: 2%",
+                organisme_social: "NSITF", cotisations_patronales: 10, cotisations_salariales: 8,
+                declaration_sociale: "Mensuelle", particularites: "CAMA 2020, Pension: 18%"
+            },
+            {
+                pays: "Ouganda", continent: "Afrique", region: "Afrique de l'Est", devise: "UGX", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + Companies Act 2012",
+                is_taux: 30, tva_taux: 18, ir_bareme: "0-40%", autres_taxes: "Withholding: 6-15%",
+                organisme_social: "NSSF", cotisations_patronales: 10, cotisations_salariales: 5,
+                declaration_sociale: "Mensuelle", particularites: "USE requirements"
+            },
+            {
+                pays: "Rwanda", continent: "Afrique", region: "Afrique de l'Est", devise: "RWF", langue: "Kinyarwanda",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS depuis 2008 + Companies Law 2009",
+                is_taux: 30, tva_taux: 18, ir_bareme: "0-30%", autres_taxes: "Withholding: 5-15%",
+                organisme_social: "RSSB", cotisations_patronales: 5, cotisations_salariales: 3,
+                declaration_sociale: "Mensuelle", particularites: "Rwanda Accounting Board + Mutuelle Santé"
+            },
+            {
+                pays: "Tanzanie", continent: "Afrique", region: "Afrique de l'Est", devise: "TZS", langue: "Swahili",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + Companies Act 2002",
+                is_taux: 30, tva_taux: 18, ir_bareme: "9-30%", autres_taxes: "Withholding: 5-20%",
+                organisme_social: "NSSF", cotisations_patronales: 0, cotisations_salariales: 0,
+                declaration_sociale: "Mensuelle", particularites: "NBAA oversight + WCF variable"
+            },
+            {
+                pays: "Tunisie", continent: "Afrique", region: "Afrique du Nord", devise: "TND", langue: "Arabe",
+                systeme_comptable: "SCE", referentiel_detail: "Système Comptable Entreprises basé IFRS",
+                is_taux: 25, tva_taux: 19, ir_bareme: "0-35%", autres_taxes: "TFP: 2%",
+                organisme_social: "CNSS", cotisations_patronales: 16.57, cotisations_salariales: 9.18,
+                declaration_sociale: "Trimestrielle", particularites: "Loi 96-112 + Ordre Experts"
+            },
+            {
+                pays: "Zambie", continent: "Afrique", region: "Afrique Australe", devise: "ZMW", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + Companies Act 2017",
+                is_taux: 35, tva_taux: 16, ir_bareme: "0-37.5%", autres_taxes: "Withholding: 15-20%",
+                organisme_social: "NAPSA", cotisations_patronales: 10, cotisations_salariales: 5,
+                declaration_sociale: "Mensuelle", particularites: "ZICA oversight + WCF"
+            },
+            {
+                pays: "Zimbabwe", continent: "Afrique", region: "Afrique Australe", devise: "USD", langue: "Anglais",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS + Companies Act 2019",
+                is_taux: 25, tva_taux: 14.5, ir_bareme: "0-40%", autres_taxes: "AIDS Levy: 3%",
+                organisme_social: "NSSA", cotisations_patronales: 3.5, cotisations_salariales: 3,
+                declaration_sociale: "Mensuelle", particularites: "PAAB oversight + WC variable"
+            },
+
+            // AMÉRIQUE DU NORD
+            {
+                pays: "Canada", continent: "Amérique du Nord", region: "Amérique du Nord", devise: "CAD", langue: "Anglais/Français",
+                systeme_comptable: "IFRS/ASPE", referentiel_detail: "IFRS publiques + ASPE privées",
+                is_taux: 15, tva_taux: 5, ir_bareme: "15-33%", autres_taxes: "Impôts provinciaux: 0-16%",
+                organisme_social: "ARC", cotisations_patronales: 8.51, cotisations_salariales: 8.51,
+                declaration_sociale: "Mensuelle ARC", particularites: "RPC: 5.95%, AE: 2.56%, variables provinces"
+            },
+            {
+                pays: "États-Unis", continent: "Amérique du Nord", region: "Amérique du Nord", devise: "USD", langue: "Anglais",
+                systeme_comptable: "US GAAP", referentiel_detail: "FASB + SEC oversight publiques",
+                is_taux: 21, tva_taux: 0, ir_bareme: "10-37%", autres_taxes: "State tax: 0-12%, Sales: 0-10%",
+                organisme_social: "IRS", cotisations_patronales: 15.3, cotisations_salariales: 7.65,
+                declaration_sociale: "Trimestrielle", particularites: "SS: 12.4%, Medicare: 2.9%, FUTA: 6%"
+            },
+            {
+                pays: "Mexique", continent: "Amérique du Nord", region: "Amérique du Nord", devise: "MXN", langue: "Espagnol",
+                systeme_comptable: "NIF", referentiel_detail: "Normas Información Financiera basées IFRS",
+                is_taux: 30, tva_taux: 16, ir_bareme: "1.92-35%", autres_taxes: "IETU: 17.5%, IDE: 3%",
+                organisme_social: "IMSS", cotisations_patronales: 25, cotisations_salariales: 3,
+                declaration_sociale: "Mensuelle", particularites: "CINIF + INFONAVIT: 5%"
+            },
+
+            // AMÉRIQUE DU SUD
+            {
+                pays: "Argentine", continent: "Amérique du Sud", region: "Amérique du Sud", devise: "ARS", langue: "Espagnol",
+                systeme_comptable: "RT", referentiel_detail: "Resoluciones Técnicas basées IFRS",
+                is_taux: 35, tva_taux: 21, ir_bareme: "5-35%", autres_taxes: "IBP: 0.5-1.25%, IDC: 0.6%",
+                organisme_social: "ANSES", cotisations_patronales: 27, cotisations_salariales: 17,
+                declaration_sociale: "Mensuelle", particularites: "FACPCE + Obra Social obligatoire"
+            },
+            {
+                pays: "Brésil", continent: "Amérique du Sud", region: "Amérique du Sud", devise: "BRL", langue: "Portugais",
+                systeme_comptable: "BR GAAP", referentiel_detail: "CPC convergent IFRS + CVM cotées",
+                is_taux: 25, tva_taux: 0, ir_bareme: "0-27.5%", autres_taxes: "CSLL: 9%, ICMS: 7-18%, PIS/COFINS: 3.65-9.25%",
+                organisme_social: "INSS", cotisations_patronales: 20, cotisations_salariales: 8,
+                declaration_sociale: "Mensuelle", particularites: "FGTS: 8% + diverses contributions"
+            },
+            {
+                pays: "Chili", continent: "Amérique du Sud", region: "Amérique du Sud", devise: "CLP", langue: "Espagnol",
+                systeme_comptable: "IFRS", referentiel_detail: "IFRS depuis 2009 + SVS oversight",
+                is_taux: 27, tva_taux: 19, ir_bareme: "0-40%", autres_taxes: "IA: 35%",
+                organisme_social: "AFP", cotisations_patronales: 0, cotisations_salariales: 20,
+                declaration_sociale: "Mensuelle", particularites: "Retraite: ~10%, Santé: 7%, Chômage: 3%"
+            },
+            {
+                pays: "Colombie", continent: "Amérique du Sud", region: "Amérique du Sud", devise: "COP", langue: "Espagnol",
+                systeme_comptable: "NCIF", referentiel_detail: "Normas basées IFRS - 3 groupes",
+                is_taux: 35, tva_taux: 19, ir_bareme: "0-39%", autres_taxes: "ICA: 0.2-1%, RF variable",
+                organisme_social: "Multiple", cotisations_patronales: 37.5, cotisations_salariales: 8,
+                declaration_sociale: "Mensuelle", particularites: "EPS: 12.5%, Pension: 16%, ARL: 0.5-8.7%"
+            },
+            {
+                pays: "Pérou", continent: "Amérique du Sud", region: "Amérique du Sud", devise: "PEN", langue: "Espagnol",
+                systeme_comptable: "NIIF", referentiel_detail: "IFRS depuis 2012 + CNC",
+                is_taux: 29.5, tva_taux: 18, ir_bareme: "8-30%", autres_taxes: "ITF: 0.005%",
+                organisme_social: "ESSALUD", cotisations_patronales: 9, cotisations_salariales: 13,
+                declaration_sociale: "Mensuelle", particularites: "SPP: 10%, SCTR variable"
+            },
+            {
+                pays: "Venezuela", continent: "Amérique du Sud", region: "Amérique du Sud", devise: "VES", langue: "Espagnol",
+                systeme_comptable: "VEN-NIF", referentiel_detail: "Normas basées IFRS + DPC-10",
+                is_taux: 34, tva_taux: 16, ir_bareme: "6-34%", autres_taxes: "ISLR variable",
+                organisme_social: "IVSS", cotisations_patronales: 13, cotisations_salariales: 4,
+                declaration_sociale: "Mensuelle", particularites: "Système en transition"
+            },
+
+            // EUROPE
+            {
+                pays: "France", continent: "Europe", region: "Europe de l'Ouest", devise: "EUR", langue: "Français",
+                systeme_comptable: "PCG", referentiel_detail: "Plan Comptable Général + IFRS cotées",
+                is_taux: 25, tva_taux: 20, ir_bareme: "0-45%", autres_taxes: "CET: 1.5%, C3S: 0.16%",
+                organisme_social: "URSSAF", cotisations_patronales: 45, cotisations_salariales: 23,
+                declaration_sociale: "Mensuelle DSN", particularites: "ANC + régimes complémentaires"
+            },
+            {
+                pays: "Allemagne", continent: "Europe", region: "Europe de l'Ouest", devise: "EUR", langue: "Allemand",
+                systeme_comptable: "HGB/IFRS", referentiel_detail: "HGB + IFRS cotées + BilMoG",
+                is_taux: 30, tva_taux: 19, ir_bareme: "14-45%", autres_taxes: "Gewerbesteuer: 14%",
+                organisme_social: "Multiple", cotisations_patronales: 21, cotisations_salariales: 21,
+                declaration_sociale: "Mensuelle", particularites: "Assurance sociale: 42% total"
+            },
+            {
+                pays: "Royaume-Uni", continent: "Europe", region: "Europe de l'Ouest", devise: "GBP", langue: "Anglais",
+                systeme_comptable: "UK GAAP/IFRS", referentiel_detail: "FRS 102 PME + IFRS cotées",
+                is_taux: 25, tva_taux: 20, ir_bareme: "20-45%", autres_taxes: "Business rates",
+                organisme_social: "HMRC", cotisations_patronales: 13.8, cotisations_salariales: 12,
+                declaration_sociale: "RTI mensuelle", particularites: "NI Class 1: employeur 13.8%"
+            },
+            {
+                pays: "Italie", continent: "Europe", region: "Europe du Sud", devise: "EUR", langue: "Italien",
+                systeme_comptable: "ITA GAAP/IFRS", referentiel_detail: "Codice Civile + IFRS cotées",
+                is_taux: 24, tva_taux: 22, ir_bareme: "23-43%", autres_taxes: "IRAP: 3.9%",
+                organisme_social: "INPS", cotisations_patronales: 30, cotisations_salariales: 9.19,
+                declaration_sociale: "Mensuelle", particularites: "Contributifs complexes selon secteur"
+            },
+            {
+                pays: "Espagne", continent: "Europe", region: "Europe du Sud", devise: "EUR", langue: "Espagnol",
+                systeme_comptable: "PGC", referentiel_detail: "Plan General Contabilidad + IFRS cotées",
+                is_taux: 25, tva_taux: 21, ir_bareme: "19-47%", autres_taxes: "IAE selon activité",
+                organisme_social: "Seguridad Social", cotisations_patronales: 29.9, cotisations_salariales: 6.35,
+                declaration_sociale: "Mensuelle", particularites: "Régimes spéciaux selon secteur"
+            },
+
+            // ASIE
+            {
+                pays: "Chine", continent: "Asie", region: "Asie de l'Est", devise: "CNY", langue: "Chinois",
+                systeme_comptable: "CAS", referentiel_detail: "Chinese Accounting Standards convergent IFRS",
+                is_taux: 25, tva_taux: 13, ir_bareme: "3-45%", autres_taxes: "VAT réformée 2016",
+                organisme_social: "Multiple", cotisations_patronales: 37, cotisations_salariales: 22,
+                declaration_sociale: "Mensuelle", particularites: "5 assurances + 1 fonds"
+            },
+            {
+                pays: "Japon", continent: "Asie", region: "Asie de l'Est", devise: "JPY", langue: "Japonais",
+                systeme_comptable: "J-GAAP/IFRS", referentiel_detail: "J-GAAP + IFRS option cotées",
+                is_taux: 23.2, tva_taux: 10, ir_bareme: "5-45%", autres_taxes: "Taxe locale: 10%",
+                organisme_social: "Multiple", cotisations_patronales: 15, cotisations_salariales: 15,
+                declaration_sociale: "Mensuelle", particularites: "Système complexe assurances"
+            },
+            {
+                pays: "Inde", continent: "Asie", region: "Asie du Sud", devise: "INR", langue: "Hindi/Anglais",
+                systeme_comptable: "Ind AS", referentiel_detail: "Indian Accounting Standards basées IFRS",
+                is_taux: 30, tva_taux: 18, ir_bareme: "5-30%", autres_taxes: "GST: 18%, Cess variables",
+                organisme_social: "EPFO", cotisations_patronales: 12, cotisations_salariales: 12,
+                declaration_sociale: "Mensuelle", particularites: "PF: 12%, ESI: 3.25%"
+            },
+            {
+                pays: "Singapour", continent: "Asie", region: "Asie du Sud-Est", devise: "SGD", langue: "Anglais",
+                systeme_comptable: "SFRS(I)", referentiel_detail: "Singapore FRS identical IFRS",
+                is_taux: 17, tva_taux: 7, ir_bareme: "0-22%", autres_taxes: "Property tax",
+                organisme_social: "CPF", cotisations_patronales: 17, cotisations_salariales: 20,
+                declaration_sociale: "Mensuelle", particularites: "CPF selon âge et salaire"
+            }
+        ];
+
+        // Fonction pour afficher l'aperçu
+        function displayPreview() {
+            const tbody = document.getElementById('previewBody');
+            tbody.innerHTML = '';
+            
+            // Afficher les 10 premiers pays
+            paysData.slice(0, 10).forEach(pays => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${pays.pays}</td>
+                    <td>${pays.continent}</td>
+                    <td>${pays.region}</td>
+                    <td>${pays.systeme_comptable}</td>
+                    <td>${pays.is_taux}</td>
+                    <td>${pays.tva_taux}</td>
+                    <td>${pays.cotisations_patronales}</td>
+                    <td>${pays.cotisations_salariales}</td>
+                `;
+            });
+            
+            // Ajouter une ligne indiquant qu'il y a plus de données
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td colspan="8" style="text-align: center; font-style: italic; background: #f0f0f0;">
+                    ... et ${paysData.length - 10} autres pays dans le fichier complet
+                </td>
+            `;
+        }
+
+        // Fonction pour générer le fichier Excel
+        function generateExcel() {
+            showLoading(true);
+            
+            setTimeout(() => {
+                const wb = XLSX.utils.book_new();
+                
+                // Feuille principale avec tous les pays
+                const ws = XLSX.utils.json_to_sheet(paysData);
+                XLSX.utils.book_append_sheet(wb, ws, "Tous les pays");
+                
+                // Feuille OHADA
+                const ohadaData = paysData.filter(p => p.region === "OHADA");
+                const wsOhada = XLSX.utils.json_to_sheet(ohadaData);
+                XLSX.utils.book_append_sheet(wb, wsOhada, "Pays OHADA");
+                
+                // Feuille Afrique
+                const afriqueData = paysData.filter(p => p.continent === "Afrique");
+                const wsAfrique = XLSX.utils.json_to_sheet(afriqueData);
+                XLSX.utils.book_append_sheet(wb, wsAfrique, "Pays Africains");
+                
+                // Feuille statistiques
+                const stats = [
+                    {Statistique: "Nombre total de pays", Valeur: paysData.length},
+                    {Statistique: "Pays OHADA", Valeur: ohadaData.length},
+                    {Statistique: "Pays africains", Valeur: afriqueData.length},
+                    {Statistique: "Taux IS moyen", Valeur: (paysData.reduce((sum, p) => sum + p.is_taux, 0) / paysData.length).toFixed(1) + "%"},
+                    {Statistique: "Taux TVA moyen", Valeur: (paysData.reduce((sum, p) => sum + p.tva_taux, 0) / paysData.length).toFixed(1) + "%"}
+                ];
+                const wsStats = XLSX.utils.json_to_sheet(stats);
+                XLSX.utils.book_append_sheet(wb, wsStats, "Statistiques");
+                
+                XLSX.writeFile(wb, "Systemes_Comptables_Mondiaux.xlsx");
+                showLoading(false);
+            }, 1000);
+        }
+
+        // Fonction pour générer le fichier CSV
+        function generateCSV() {
+            showLoading(true);
+            
+            setTimeout(() => {
+                const csv = XLSX.utils.sheet_to_csv(XLSX.utils.json_to_sheet(paysData));
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "Systemes_Comptables_Mondiaux.csv";
+                link.click();
+                showLoading(false);
+            }, 500);
+        }
+
+        // Fonction pour télécharger le script SQL
+        function downloadSQL() {
+            showLoading(true);
+            
+            setTimeout(() => {
+                const sqlScript = generateSQLScript();
+                const blob = new Blob([sqlScript], { type: 'text/sql;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "Systemes_Comptables_Mondiaux.sql";
+                link.click();
+                showLoading(false);
+            }, 800);
+        }
+
+        // Fonction pour générer le script SQL
+        function generateSQLScript() {
+            let sql = `-- Base de données des Systèmes Comptables, Fiscaux et Sociaux Mondiaux
+-- Générée le ${new Date().toLocaleDateString('fr-FR')}
+
+-- Création de la base de données
+CREATE DATABASE IF NOT EXISTS systemes_comptables_mondiaux;
+USE systemes_comptables_mondiaux;
+
+-- Création de la table principale
+DROP TABLE IF EXISTS pays_systemes;
+CREATE TABLE pays_systemes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pays VARCHAR(100) NOT NULL,
+    continent VARCHAR(50) NOT NULL,
+    region VARCHAR(100) NOT NULL,
+    devise VARCHAR(10) NOT NULL,
+    langue VARCHAR(100) NOT NULL,
+    systeme_comptable VARCHAR(50) NOT NULL,
+    referentiel_detail TEXT,
+    is_taux DECIMAL(5,2) NOT NULL,
+    tva_taux DECIMAL(5,2) NOT NULL,
+    ir_bareme VARCHAR(100),
+    autres_taxes TEXT,
+    organisme_social VARCHAR(100),
+    cotisations_patronales DECIMAL(5,2),
+    cotisations_salariales DECIMAL(5,2),
+    declaration_sociale VARCHAR(100),
+    particularites TEXT,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Index pour optimiser les requêtes
+CREATE INDEX idx_pays ON pays_systemes(pays);
+CREATE INDEX idx_continent ON pays_systemes(continent);
+CREATE INDEX idx_region ON pays_systemes(region);
+CREATE INDEX idx_systeme_comptable ON pays_systemes(systeme_comptable);
+
+-- Insertion des données
+INSERT INTO pays_systemes (
+    pays, continent, region, devise, langue, systeme_comptable, referentiel_detail,
+    is_taux, tva_taux, ir_bareme, autres_taxes, organisme_social,
+    cotisations_patronales, cotisations_salariales, declaration_sociale, particularites
+) VALUES\n`;
+
+            paysData.forEach((pays, index) => {
+                sql += `('${pays.pays.replace(/'/g, "''")}', '${pays.continent}', '${pays.region}', '${pays.devise}', '${pays.langue}', '${pays.systeme_comptable}', '${pays.referentiel_detail.replace(/'/g, "''")}', ${pays.is_taux}, ${pays.tva_taux}, '${pays.ir_bareme}', '${pays.autres_taxes.replace(/'/g, "''")}', '${pays.organisme_social}', ${pays.cotisations_patronales}, ${pays.cotisations_salariales}, '${pays.declaration_sociale}', '${pays.particularites.replace(/'/g, "''")}')`;
+                sql += index < paysData.length - 1 ? ',\n' : ';\n\n';
+            });
+
+            sql += `-- Vues utiles
+CREATE VIEW pays_ohada AS
+SELECT * FROM pays_systemes WHERE region = 'OHADA';
+
+CREATE VIEW pays_africains AS
+SELECT * FROM pays_systemes WHERE continent = 'Afrique';
+
+CREATE VIEW pays_ifrs AS
+SELECT * FROM pays_systemes WHERE systeme_comptable LIKE '%IFRS%';
+
+-- Requêtes d'exemple
+-- 1. Pays avec IS > 30%
+-- SELECT pays, is_taux FROM pays_systemes WHERE is_taux > 30 ORDER BY is_taux DESC;
+
+-- 2. Comparaison taux TVA par continent
+-- SELECT continent, AVG(tva_taux) as tva_moyenne FROM pays_systemes GROUP BY continent;
+
+-- 3. Systèmes comptables les plus utilisés
+-- SELECT systeme_comptable, COUNT(*) as nb_pays FROM pays_systemes GROUP BY systeme_comptable ORDER BY nb_pays DESC;
+
+-- 4. Pays avec cotisations sociales les plus élevées
+-- SELECT pays, (cotisations_patronales + cotisations_salariales) as total_cotisations FROM pays_systemes ORDER BY total_cotisations DESC LIMIT 10;
+
+-- Statistiques globales
+SELECT 
+    COUNT(*) as total_pays,
+    AVG(is_taux) as is_moyen,
+    AVG(tva_taux) as tva_moyenne,
+    AVG(cotisations_patronales) as cotisations_patronales_moyenne,
+    AVG(cotisations_salariales) as cotisations_salariales_moyenne
+FROM pays_systemes;`;
+
+            return sql;
+        }
+
+        // Fonction pour afficher/masquer le loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Initialisation au chargement de la page
+        document.addEventListener('DOMContentLoaded', function() {
+            displayPreview();
+        });
+    </script>
+</body>
+</html>

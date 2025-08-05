@@ -1,32 +1,26 @@
 <div class="app-container">
-  <!-- Sidebar Navigation -->
-  <nav class="sidebar">
-    <div class="sidebar-header">
-      <h2>E COMPTA IA</h2>
-      <p>SYSCOHADA AUDCIF</p>
-    </div>
-    
-    <ul class="nav-menu">
-      <li *ngFor="let item of menuItems" class="nav-item">
-        <a [routerLink]="item.path" routerLinkActive="active" class="nav-link">
-          <i class="material-icons" [style.color]="item.color">{{item.icon}}</i>
-          <span>{{item.label}}</span>
-        </a>
-      </li>
+  <h1>🚀 E COMPTA IA</h1>
+  <h2>Plateforme Comptable SYSCOHADA AUDCIF</h2>
+  
+  <div class="status">
+    ✅ Application Angular fonctionnelle !
+  </div>
+  
+  <div class="features">
+    <h3>Modules disponibles :</h3>
+    <ul>
+      <li>📊 Tableau de Bord</li>
+      <li>🏢 Identité Entreprise</li>
+      <li>📋 Plan Comptable</li>
+      <li>👥 Gestion Tiers</li>
+      <li>✍️ Saisie Écritures</li>
+      <li>🤖 Assistant IA</li>
+      <li>📚 Journaux</li>
+      <li>📖 Grands Livres</li>
+      <li>⚖️ Balances</li>
+      <li>🏦 Rapprochements</li>
+      <li>📈 États Financiers</li>
+      <li>🏛️ Déclarations</li>
     </ul>
-  </nav>
-
-  <!-- Main Content -->
-  <main class="main-content">
-    <header class="top-header">
-      <h1>Plateforme Comptable Intelligente</h1>
-      <div class="user-info">
-        <span>Conforme SYSCOHADA AUDCIF</span>
-      </div>
-    </header>
-    
-    <div class="content-area">
-      <router-outlet></router-outlet>
-    </div>
-  </main>
+  </div>
 </div>

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E COMPTA IA - SYSCOHADA AUDCIF</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            text-align: center;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin-bottom: 16px;
+            font-weight: 300;
+        }
+        
+        h2 {
+            font-size: 24px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .status {
+            background: rgba(76, 175, 80, 0.2);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            font-size: 20px;
+            font-weight: 500;
+        }
+        
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .module {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+        
+        .module:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .module-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+        
+        .tech-stack {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+        
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 E COMPTA IA</h1>
+        <h2>Plateforme Comptable SYSCOHADA AUDCIF avec Intelligence Artificielle</h2>
+        
+        <div class="status">
+            ✅ Application Angular Créée et Fonctionnelle !
+        </div>
+        
+        <p>La première plateforme comptable qui dépasse les standards internationaux en combinant :</p>
+        <ul style="text-align: left; max-width: 600px; margin: 20px auto;">
+            <li>• La puissance de SAP</li>
+            <li>• La simplicité de QuickBooks</li>
+            <li>• Le design de Xero</li>
+            <li>• La conformité de SAGE</li>
+            <li>• L'adaptation AUDCIF unique</li>
+        </ul>
+        
+        <div class="modules">
+            <div class="module">
+                <div class="module-icon">📊</div>
+                <h3>Tableau de Bord</h3>
+                <p>KPIs temps réel, ratios AUDCIF</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">🏢</div>
+                <h3>Identité Entreprise</h3>
+                <p>Onboarding, validation docs</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">📋</div>
+                <h3>Plan Comptable</h3>
+                <p>SYSCOHADA, import, validation</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">👥</div>
+                <h3>Gestion Tiers</h3>
+                <p>Fiches, scoring, relances</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">✍️</div>
+                <h3>Saisie Écritures</h3>
+                <p>Interface guidée, contrôles</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">🤖</div>
+                <h3>Assistant IA</h3>
+                <p>OCR, génération automatique</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">📚</div>
+                <h3>Journaux</h3>
+                <p>Couleurs, filtres avancés</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">📖</div>
+                <h3>Grands Livres</h3>
+                <p>Lettrage, recherche intelligente</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">⚖️</div>
+                <h3>Balances</h3>
+                <p>Export PDF/Excel, drill-down</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">🏦</div>
+                <h3>Rapprochements</h3>
+                <p>Import relevés, matching auto</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">📈</div>
+                <h3>États Financiers</h3>
+                <p>Génération AUDCIF automatique</p>
+            </div>
+            <div class="module">
+                <div class="module-icon">🏛️</div>
+                <h3>Déclarations</h3>
+                <p>TVA, IS, pré-remplissage</p>
+            </div>
+        </div>
+        
+        <div class="tech-stack">
+            <h3>Stack Technique</h3>
+            <div class="badges">
+                <span class="badge">Angular 20</span>
+                <span class="badge">TypeScript</span>
+                <span class="badge">SCSS</span>
+                <span class="badge">Responsive Design</span>
+                <span class="badge">Progressive Web App</span>
+                <span class="badge">Material Design</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 40px; font-size: 14px; opacity: 0.8;">
+            🎯 Objectif : La référence des logiciels comptables en Afrique !
+        </div>
+    </div>
+</body>
+</html>

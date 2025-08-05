@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E COMPTA IA - SYSCOHADA AUDCIF - DEMO</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            padding: 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h1 {
+            font-size: 52px;
+            margin-bottom: 16px;
+            font-weight: 300;
+            background: linear-gradient(45deg, #fff, #e3f2fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+        
+        .status {
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            padding: 20px 30px;
+            border-radius: 50px;
+            margin: 40px auto;
+            font-size: 18px;
+            font-weight: 500;
+            display: inline-block;
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.3);
+        }
+        
+        .features-intro {
+            margin: 40px 0;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        
+        .features-list {
+            text-align: left;
+            max-width: 600px;
+            margin: 30px auto;
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+        }
+        
+        .features-list li {
+            padding: 8px 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .features-list li::before {
+            content: "✨";
+            margin-right: 10px;
+        }
+        
+        .modules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin: 50px 0;
+        }
+        
+        .module {
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .module::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff9800, #f57c00);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .module:hover {
+            transform: translateY(-8px);
+            background: rgba(255,255,255,0.25);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+        
+        .module:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .module-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .module h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .module p {
+            font-size: 14px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        
+        .tech-stack {
+            margin: 50px 0;
+            padding: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .tech-stack h3 {
+            margin-bottom: 25px;
+            font-size: 22px;
+        }
+        
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .badge {
+            background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.3));
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .badge:hover {
+            background: linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.4));
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding: 30px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            text-align: left;
+        }
+        
+        .footer-section h4 {
+            margin-bottom: 15px;
+            color: #e3f2fd;
+        }
+        
+        .footer-section p, .footer-section li {
+            font-size: 14px;
+            opacity: 0.8;
+            line-height: 1.5;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+        }
+        
+        .footer-section li {
+            padding: 5px 0;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+            
+            .subtitle {
+                font-size: 18px;
+            }
+            
+            .modules {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 20px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="container">
+            <h1>🚀 E COMPTA IA</h1>
+            <p class="subtitle">Plateforme Comptable SYSCOHADA AUDCIF avec Intelligence Artificielle</p>
+            
+            <div class="status">
+                ✅ Application Angular Créée et Fonctionnelle !
+            </div>
+            
+            <div class="features-intro">
+                <strong>La première plateforme comptable qui dépasse les standards internationaux</strong>
+                <div class="features-list">
+                    <ul>
+                        <li>La puissance de SAP</li>
+                        <li>La simplicité de QuickBooks</li>
+                        <li>Le design de Xero</li>
+                        <li>La conformité de SAGE</li>
+                        <li>L'adaptation AUDCIF unique</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="modules">
+                <div class="module">
+                    <div class="module-icon">📊</div>
+                    <h3>Tableau de Bord</h3>
+                    <p>KPIs temps réel, graphiques interactifs, ratios financiers AUDCIF, alertes visuelles</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">🏢</div>
+                    <h3>Identité Entreprise</h3>
+                    <p>Onboarding complet, choix pays/système comptable, validation automatique des documents</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">📋</div>
+                    <h3>Plan Comptable</h3>
+                    <p>SYSCOHADA conforme, import intelligent, validation automatique, suggestions IA</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">👥</div>
+                    <h3>Gestion Tiers</h3>
+                    <p>Fiches complètes, scoring clients, relances automatiques, historique transactions</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">✍️</div>
+                    <h3>Saisie Écritures</h3>
+                    <p>Interface guidée, contrôles de cohérence, templates, pièces jointes, validation temps réel</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">🤖</div>
+                    <h3>Assistant IA</h3>
+                    <p>OCR documents, génération écritures automatiques, détection anomalies, apprentissage continu</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">📚</div>
+                    <h3>Journaux</h3>
+                    <p>Couleurs distinctes, navigation cliquable, filtres avancés, statistiques par journal</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">📖</div>
+                    <h3>Grands Livres</h3>
+                    <p>Filtres multicritères, lettrage visuel, recherche intelligente, soldes progressifs</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">⚖️</div>
+                    <h3>Balances</h3>
+                    <p>Export PDF/Excel, comparaisons automatiques, drill-down, analyses intégrées</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">🏦</div>
+                    <h3>Rapprochements</h3>
+                    <p>Import relevés bancaires, matching automatique, règles de catégorisation</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">📈</div>
+                    <h3>États Financiers</h3>
+                    <p>Génération automatique AUDCIF, notes annexes, comparaisons N/N-1</p>
+                </div>
+                <div class="module">
+                    <div class="module-icon">🏛️</div>
+                    <h3>Déclarations</h3>
+                    <p>TVA, IS, charges sociales, pré-remplissage automatique, calendrier fiscal</p>
+                </div>
+            </div>
+            
+            <div class="tech-stack">
+                <h3>🛠️ Stack Technique</h3>
+                <div class="badges">
+                    <span class="badge">Angular 20</span>
+                    <span class="badge">TypeScript</span>
+                    <span class="badge">SCSS</span>
+                    <span class="badge">Responsive Design</span>
+                    <span class="badge">Progressive Web App</span>
+                    <span class="badge">Material Design</span>
+                    <span class="badge">RxJS</span>
+                    <span class="badge">Angular Router</span>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <div class="footer-content">
+                    <div class="footer-section">
+                        <h4>🎯 Objectifs</h4>
+                        <ul>
+                            <li>100% conformité SYSCOHADA AUDCIF</li>
+                            <li>Interface moderne et intuitive</li>
+                            <li>Automatisation intelligente</li>
+                            <li>Multi-devises UEMOA</li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>🚀 Innovations</h4>
+                        <ul>
+                            <li>IA comptable intégrée</li>
+                            <li>Calculs temps réel</li>
+                            <li>Collaboration avancée</li>
+                            <li>Sécurité renforcée</li>
+                        </ul>
+                    </div>
+                    <div class="footer-section">
+                        <h4>🌍 Marché Cible</h4>
+                        <ul>
+                            <li>Espace OHADA</li>
+                            <li>Pays SYSCOHADA</li>
+                            <li>Extension mondiale</li>
+                            <li>Adaptation locale</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    🏆 <strong>Objectif : La référence des logiciels comptables en Afrique !</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

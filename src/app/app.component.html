@@ -1,0 +1,32 @@
+<div class="app-container">
+  <!-- Sidebar Navigation -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <h2>E COMPTA IA</h2>
+      <p>SYSCOHADA AUDCIF</p>
+    </div>
+    
+    <ul class="nav-menu">
+      <li *ngFor="let item of menuItems" class="nav-item">
+        <a [routerLink]="item.path" routerLinkActive="active" class="nav-link">
+          <i class="material-icons" [style.color]="item.color">{{item.icon}}</i>
+          <span>{{item.label}}</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-header">
+      <h1>Plateforme Comptable Intelligente</h1>
+      <div class="user-info">
+        <span>Conforme SYSCOHADA AUDCIF</span>
+      </div>
+    </header>
+    
+    <div class="content-area">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

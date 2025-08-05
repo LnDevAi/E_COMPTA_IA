@@ -1,16 +1,25 @@
 {
-  "name": "workspace",
+  "name": "e-compta-ia",
   "version": "1.0.0",
-  "description": "A FAIRE PLUS TARD",
-  "main": "index.js",
+  "description": "E COMPTA IA - Plateforme comptable SYSCOHADA AUDCIF avec IA",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "test": "ng test",
+    "lint": "ng lint"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LnDevAi/E_COMPTA_IA.git"
   },
-  "keywords": [],
+  "keywords": [
+    "comptabilite",
+    "syscohada",
+    "audcif",
+    "ia",
+    "angular"
+  ],
   "author": "",
   "license": "ISC",
   "bugs": {
@@ -31,5 +40,9 @@
     "rxjs": "^7.8.2",
     "typescript": "^5.9.2",
     "zone.js": "^0.15.1"
+  },
+  "devDependencies": {
+    "@angular-devkit/build-angular": "^20.1.4",
+    "@angular/compiler-cli": "^20.1.4"
   }
 }

@@ -1,0 +1,228 @@
+{
+  "titre": "Loi de Finances 2025 - Burkina Faso",
+  "categorie": "loi_finances",
+  "domaine": "fiscal",
+  "pays": ["BF"],
+  "datePublication": "2025-01-01",
+  "dateValidite": "2025-12-31",
+  "dateEntreeVigueur": "2025-01-01",
+  "source": "Assemblée Nationale & Ministère des Finances - Burkina Faso",
+  "fiabilite": "officielle",
+  "version": "2025.1_loi_finances",
+  "pages": "estimé 200+",
+  "taille": "9.4MB",
+  "statut": "promulguee",
+  
+  "mots_cles": [
+    "loi finances 2025", "burkina faso", "BF", "budget 2025", "fiscal 2025",
+    "modifications fiscales", "nouveautes fiscales", "taux 2025", "seuils 2025",
+    "IBIC 2025", "TVA 2025", "ITS 2025", "impots 2025", "taxes 2025",
+    "budget etat", "recettes fiscales", "depenses publiques", "investissements",
+    "politique fiscale", "mesures fiscales", "incitations fiscales",
+    "exonerations 2025", "abattements 2025", "credits impot 2025",
+    "acomptes 2025", "echeances 2025", "procedures 2025", "sanctions 2025",
+    "code general impots", "modifications CGI", "amenagements fiscaux",
+    "allègements fiscaux", "renforcement fiscal", "mobilisation ressources",
+    "competitivite", "attractivite", "investissement prive", "secteur informel",
+    "numerisation", "digitalisation", "modernisation", "transparence",
+    "lutte fraude", "controle fiscal", "recouvrement", "contentieux"
+  ],
+  
+  "resume": "Loi de Finances 2025 du Burkina Faso définissant le budget de l'État et introduisant les modifications fiscales majeures pour l'exercice 2025. Document essentiel présentant les nouveaux taux, seuils, mesures d'incitation, et réformes structurelles du système fiscal burkinabè.",
+  
+  "langues": ["fr"],
+  
+  "structure_principale": {
+    "titre_1": "Dispositions générales et principes budgétaires",
+    "titre_2": "Ressources de l'État - Recettes fiscales",
+    "titre_3": "Charges de l'État - Dépenses publiques", 
+    "titre_4": "Dispositions fiscales spécifiques",
+    "titre_5": "Mesures d'accompagnement et incitations",
+    "titre_6": "Modifications du Code Général des Impôts",
+    "titre_7": "Dispositions diverses et transitoires",
+    "annexes": "Projets de performance et indicateurs"
+  },
+  
+  "modifications_fiscales_majeures_2025": {
+    "taux_impots": "Révisions tarifaires importantes",
+    "seuils_regimes": "Ajustements seuils d'assujettissement",
+    "nouvelles_mesures": "Créations taxes/impôts spécifiques",
+    "exonerations": "Nouvelles exonérations sectorielles",
+    "procedures": "Simplifications administratives",
+    "numerisation": "Obligations déclaratives digitales",
+    "sanctions": "Renforcement arsenal répressif",
+    "incitations": "Mesures attractivité investissements"
+  },
+  
+  "secteurs_prioritaires_2025": [
+    "Agriculture et sécurité alimentaire",
+    "Industries extractives et mines",
+    "Énergie et énergies renouvelables",
+    "Technologies numériques et télécoms",
+    "Infrastructures et BTP",
+    "Santé et industries pharmaceutiques",
+    "Éducation et formation professionnelle",
+    "Tourisme et artisanat",
+    "Transport et logistique",
+    "Commerce et services financiers"
+  ],
+  
+  "mesures_attractivite": {
+    "zones_franches": "Nouvelles dispositions zones industrielles",
+    "code_investissements": "Révisions avantages fiscaux",
+    "PME_promotion": "Mesures spécifiques PME/PMI",
+    "startup_innovation": "Incitations entreprises innovantes",
+    "export_promotion": "Facilitations fiscales export",
+    "partenariats_public_prive": "Cadre fiscal PPP renforcé"
+  },
+  
+  "digitalisation_fiscale": {
+    "declarations_electroniques": "Obligations déclarations en ligne",
+    "paiements_digitaux": "Facilitation paiements électroniques",
+    "controles_automatises": "Renforcement contrôles digitaux",
+    "traçabilite_operations": "Amélioration traçabilité fiscale",
+    "intelligence_artificielle": "Utilisation IA pour contrôles",
+    "blockchain_securisation": "Sécurisation données fiscales"
+  },
+  
+  "lutte_contre_fraude": {
+    "renforcement_sanctions": "Durcissement pénalités fiscales",
+    "cooperation_internationale": "Échange informations fiscales",
+    "controles_cibles": "Ciblage secteurs à risque",
+    "whistleblowing": "Protection lanceurs d'alerte",
+    "asset_recovery": "Recouvrement avoirs cachés",
+    "compliance_programmes": "Programmes conformité entreprises"
+  },
+  
+  "objectifs_budgetaires_2025": {
+    "recettes_fiscales_cible": "Objectif mobilisation ressources internes",
+    "ratio_pression_fiscale": "Amélioration taux pression fiscale",
+    "elargissement_assiette": "Extension base imposable",
+    "modernisation_administration": "Renforcement capacités DGI",
+    "transparence_budgetaire": "Amélioration gouvernance finances publiques"
+  },
+  
+  "calendrier_application": {
+    "entree_vigueur_generale": "1er janvier 2025",
+    "mesures_transitoires": "Dispositions d'accompagnement",
+    "echeances_specifiques": "Dates limites nouvelles obligations",
+    "periodes_adaptation": "Délais mise en conformité entreprises",
+    "evaluations_impact": "Suivi mise en œuvre réformes"
+  },
+  
+  "comparaison_2024_2025": {
+    "evolutions_taux": "Comparatif taux fiscaux 2024 vs 2025",
+    "modifications_seuils": "Changements seuils assujettissement",
+    "nouvelles_obligations": "Obligations supplémentaires 2025",
+    "suppressions_mesures": "Mesures 2024 non reconduites",
+    "adaptations_procedures": "Évolutions procédurales"
+  },
+  
+  "impact_entreprises": {
+    "grandes_entreprises": "Implications fiscales GE",
+    "PME_PMI": "Spécificités moyennes entreprises",
+    "micro_entreprises": "Adaptations micro-entreprises",
+    "secteur_informel": "Évolutions CSI et régimes simplifiés",
+    "multinationales": "Prix de transfert et conventions",
+    "startups": "Dispositions entreprises innovantes"
+  },
+  
+  "utilisation_recommandee": [
+    "Analyse modifications fiscales 2025",
+    "Planification fiscale entreprises",
+    "Compliance et mise en conformité",
+    "Évaluation impact budgétaire",
+    "Conseil fiscal stratégique",
+    "Formation professionnels fiscaux",
+    "Recherche politique fiscale",
+    "Audit conformité réglementaire",
+    "Optimisation fiscale légale",
+    "Due diligence fiscale"
+  ],
+  
+  "questions_cles_ia": [
+    "Quels sont les nouveaux taux fiscaux 2025 Burkina Faso ?",
+    "Modifications IBIC 2025 par rapport à 2024 ?",
+    "Nouvelles exonérations sectorielles 2025 BF ?",
+    "Obligations déclarations électroniques 2025 ?",
+    "Mesures incitatives PME Loi Finances 2025 ?",
+    "Sanctions fiscales renforcées 2025 Burkina ?",
+    "Seuils TVA modifiés 2025 vs 2024 ?",
+    "Nouvelles mesures anti-fraude fiscale 2025 ?"
+  ],
+  
+  "coherence_documents": {
+    "document_principal": "RECUEIL DE TEXTES FISCAUX DU BURKINA FASO.pdf",
+    "complement_essentiel": true,
+    "mise_a_jour_recueil": "Modifications à intégrer au recueil principal",
+    "prevaut_sur": "Dispositions 2024 modifiées par LF 2025",
+    "articulation": "Lecture conjointe avec CGI et arrêtés"
+  },
+  
+  "niveau_priorite": "maximale",
+  "frequence_consultation_estimee": "quotidienne",
+  "document_reference": "primaire_2025",
+  "importance_strategique": "critique",
+  
+  "compatibilite_ia": {
+    "extraction_modifications": true,
+    "comparaison_automatique": true,
+    "detection_changements": true,
+    "calculs_impacts": true,
+    "generation_syntheses": true,
+    "alertes_changements": true,
+    "timeline_modifications": true,
+    "cross_reference": true
+  },
+  
+  "alertes_importantes": [
+    "Vérifier dates d'entrée en vigueur spécifiques",
+    "Identifier mesures transitoires applicables", 
+    "Contrôler nouvelles obligations déclaratives",
+    "Évaluer impacts sur régimes existants",
+    "Suivre publications arrêtés d'application",
+    "Anticiper adaptations systèmes entreprises"
+  ],
+  
+  "mise_a_jour": {
+    "derniere_modification": "2025-01-01",
+    "prochaine_revision": "Loi Finances Rectificative 2025",
+    "changelog": "Loi Finances 2025 - Modifications fiscales majeures",
+    "historique": "Remplace dispositions fiscales 2024 modifiées"
+  },
+  
+  "documents_lies": [
+    "RECUEIL DE TEXTES FISCAUX DU BURKINA FASO.pdf",
+    "Arrêtés d'application LF 2025 (à venir)",
+    "Circulaires DGI 2025 (à venir)",
+    "Instructions techniques 2025 (à venir)",
+    "Formulaires fiscaux 2025 (à venir)"
+  ],
+  
+  "contact_source": {
+    "organisme_principal": "Ministère de l'Économie et des Finances",
+    "assemblee_nationale": "Commission Finances Assemblée Nationale",
+    "dgi": "Direction Générale des Impôts",
+    "site_web_officiel": "www.finances.gov.bf",
+    "publication_jo": "Journal Officiel du Burkina Faso",
+    "contact_technique": "contact@impots.gov.bf"
+  },
+  
+  "certification_officielle": [
+    "Adoptée par l'Assemblée Nationale",
+    "Promulguée par le Président du Faso",
+    "Publiée au Journal Officiel",
+    "Applicable sur territoire national",
+    "Force de loi depuis 1er janvier 2025"
+  ],
+  
+  "notes_techniques": [
+    "Document officiel Loi de Finances 2025 - 9.4MB",
+    "Contient TOUTES les modifications fiscales 2025",
+    "Lecture obligatoire pour professionnels fiscaux",
+    "Prévaut sur dispositions antérieures modifiées",
+    "Base légale nouvelle politique fiscale BF",
+    "Indexation complète pour IA E-COMPTA-IA",
+    "Source primaire modifications CGI 2025"
+  ]
+}

@@ -1,0 +1,304 @@
+{
+  "version": "1.0",
+  "derniere_mise_a_jour": "2024-03-20",
+  "regles_validation_ecritures": {
+    
+    "regles_equilibre": {
+      "description": "Règles d'équilibre des écritures comptables",
+      "regles": [
+        {
+          "id": "REQ_001",
+          "nom": "Équilibre débit/crédit",
+          "description": "Le total des débits doit égaler le total des crédits",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "formule": "SUM(debits) = SUM(credits)",
+          "message_erreur": "L'écriture n'est pas équilibrée : débit ({debit_total}) ≠ crédit ({credit_total})"
+        },
+        {
+          "id": "REQ_002", 
+          "nom": "Montant minimal",
+          "description": "Le montant de l'écriture doit être supérieur à 0",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "formule": "SUM(ABS(debits)) > 0",
+          "message_erreur": "Le montant total de l'écriture doit être supérieur à 0"
+        }
+      ]
+    },
+
+    "regles_comptes": {
+      "description": "Règles de validation des comptes comptables",
+      "regles": [
+        {
+          "id": "CPT_001",
+          "nom": "Compte existant",
+          "description": "Le compte doit exister dans le plan comptable SYSCOHADA",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "formule": "compte IN plan_comptable_syscohada",
+          "message_erreur": "Le compte {compte} n'existe pas dans le plan comptable SYSCOHADA"
+        },
+        {
+          "id": "CPT_002",
+          "nom": "Sens du compte",
+          "description": "Le sens d'imputation doit respecter la nature du compte",
+          "type": "obligatoire",
+          "severite": "avertissement",
+          "regles_specifiques": {
+            "classe_1": "Normalement créditeur (capitaux propres)",
+            "classe_2": "Normalement débiteur (immobilisations)",
+            "classe_3": "Normalement débiteur (stocks)",
+            "classe_4": "Débiteur (clients) ou créditeur (fournisseurs)",
+            "classe_5": "Normalement débiteur (trésorerie)",
+            "classe_6": "Normalement débiteur (charges)",
+            "classe_7": "Normalement créditeur (produits)"
+          },
+          "message_erreur": "Le sens d'imputation du compte {compte} semble inhabituel pour sa classe"
+        },
+        {
+          "id": "CPT_003",
+          "nom": "Compte détaillé",
+          "description": "Utiliser le niveau de détail approprié selon la taille de l'entreprise",
+          "type": "conseil",
+          "severite": "info",
+          "message_info": "Considérer l'utilisation d'un compte plus détaillé si la taille de l'entreprise le justifie"
+        }
+      ]
+    },
+
+    "regles_tva": {
+      "description": "Règles de validation de la TVA",
+      "regles": [
+        {
+          "id": "TVA_001",
+          "nom": "Cohérence taux TVA",
+          "description": "Le taux de TVA doit correspondre aux taux en vigueur dans le pays",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "taux_autorises_par_pays": {
+            "CI": [0, 9, 18],
+            "BF": [0, 9, 18],
+            "SN": [0, 10, 18],
+            "ML": [0, 18],
+            "TG": [0, 18],
+            "NE": [0, 19]
+          },
+          "message_erreur": "Le taux de TVA {taux}% n'est pas autorisé dans le pays {pays}"
+        },
+        {
+          "id": "TVA_002",
+          "nom": "Calcul TVA correct",
+          "description": "Le montant de TVA doit être correctement calculé",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "formule": "montant_tva = montant_ht * (taux_tva / 100)",
+          "tolerance": 1,
+          "message_erreur": "Erreur de calcul TVA : attendu {montant_attendu}, trouvé {montant_trouve}"
+        },
+        {
+          "id": "TVA_003",
+          "nom": "Déductibilité TVA",
+          "description": "Vérifier la déductibilité de la TVA selon la nature de la dépense",
+          "type": "conseil",
+          "severite": "avertissement",
+          "regles_deductibilite": {
+            "frais_reception": "50% déductible",
+            "voitures_particulieres": "Non déductible en général",
+            "carburant": "Partiellement déductible selon le pays",
+            "immobilisations": "100% déductible si assujetti"
+          },
+          "message_avertissement": "Vérifier la déductibilité de la TVA pour cette nature de dépense"
+        }
+      ]
+    },
+
+    "regles_tiers": {
+      "description": "Règles de validation des tiers",
+      "regles": [
+        {
+          "id": "TIE_001",
+          "nom": "Cohérence compte/tiers",
+          "description": "Le tiers doit être cohérent avec le compte utilisé",
+          "type": "obligatoire",
+          "severite": "avertissement",
+          "correspondances": {
+            "4011": "fournisseur",
+            "4111": "client",
+            "421": "personnel",
+            "431": "securite_sociale",
+            "445": "etat"
+          },
+          "message_erreur": "Incohérence entre le compte {compte} et le type de tiers {type_tiers}"
+        },
+        {
+          "id": "TIE_002",
+          "nom": "Tiers existant",
+          "description": "Le tiers doit être référencé dans la base",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "message_erreur": "Le tiers {code_tiers} n'existe pas dans la base de données"
+        }
+      ]
+    },
+
+    "regles_dates": {
+      "description": "Règles de validation des dates",
+      "regles": [
+        {
+          "id": "DAT_001",
+          "nom": "Date dans l'exercice",
+          "description": "La date doit être comprise dans l'exercice comptable ouvert",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "message_erreur": "La date {date} n'est pas comprise dans l'exercice comptable en cours"
+        },
+        {
+          "id": "DAT_002",
+          "nom": "Date cohérente",
+          "description": "La date ne doit pas être future (sauf cas particuliers)",
+          "type": "avertissement",
+          "severite": "avertissement",
+          "message_avertissement": "Date future détectée : vérifier la cohérence"
+        },
+        {
+          "id": "DAT_003",
+          "nom": "Période clôturée",
+          "description": "Interdire les écritures sur des périodes clôturées",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "message_erreur": "Impossible de passer une écriture sur une période clôturée"
+        }
+      ]
+    },
+
+    "regles_sectorielles": {
+      "description": "Règles spécifiques par secteur d'activité",
+      "secteurs": {
+        "commerce": {
+          "description": "Règles pour le secteur commercial",
+          "regles": [
+            {
+              "id": "COM_001",
+              "nom": "Marge commerciale",
+              "description": "Alerter si la marge semble anormale",
+              "type": "conseil",
+              "seuils": {
+                "marge_minimale": 5,
+                "marge_maximale": 300
+              },
+              "message_info": "Marge commerciale inhabituelle détectée : {marge}%"
+            }
+          ]
+        },
+        "industrie": {
+          "description": "Règles pour le secteur industriel",
+          "regles": [
+            {
+              "id": "IND_001",
+              "nom": "Production immobilisée",
+              "description": "Vérifier la cohérence des productions immobilisées",
+              "type": "conseil",
+              "message_info": "Vérifier la valorisation de la production immobilisée"
+            }
+          ]
+        },
+        "services": {
+          "description": "Règles pour le secteur des services",
+          "regles": [
+            {
+              "id": "SRV_001",
+              "nom": "Prestations en cours",
+              "description": "Surveiller les prestations en cours de réalisation",
+              "type": "conseil",
+              "message_info": "Penser à évaluer les prestations en cours en fin de période"
+            }
+          ]
+        }
+      }
+    },
+
+    "regles_conformite_audcif": {
+      "description": "Règles de conformité SYSCOHADA AUDCIF",
+      "regles": [
+        {
+          "id": "AUD_001",
+          "nom": "Classification AUDCIF",
+          "description": "Respecter la classification AUDCIF des comptes",
+          "type": "obligatoire",
+          "severite": "erreur",
+          "message_erreur": "Non-conformité AUDCIF détectée pour le compte {compte}"
+        },
+        {
+          "id": "AUD_002",
+          "nom": "Seuils significatifs",
+          "description": "Respecter les seuils de signification AUDCIF",
+          "type": "avertissement",
+          "seuils": {
+            "immobilisations": 500000,
+            "provisions": 100000,
+            "engagements": 1000000
+          },
+          "message_avertissement": "Montant significatif détecté : vérifier la documentation"
+        }
+      ]
+    },
+
+    "regles_optimisation": {
+      "description": "Règles d'optimisation et de performance",
+      "regles": [
+        {
+          "id": "OPT_001",
+          "nom": "Simplification comptable",
+          "description": "Proposer des simplifications quand c'est possible",
+          "type": "conseil",
+          "suggestions": [
+            "Regrouper les écritures similaires",
+            "Utiliser des journaux spécialisés",
+            "Automatiser les écritures récurrentes"
+          ]
+        },
+        {
+          "id": "OPT_002",
+          "nom": "Optimisation fiscale",
+          "description": "Identifier les opportunités d'optimisation fiscale",
+          "type": "conseil",
+          "suggestions": [
+            "Amortissements dérogatoires",
+            "Provisions déductibles",
+            "Étalement des charges"
+          ]
+        }
+      ]
+    }
+  },
+
+  "parametres_validation": {
+    "tolerance_calculs": 1,
+    "devise_reference": "XOF",
+    "precision_monetaire": 2,
+    "niveau_validation_defaut": "standard",
+    "activation_regles_sectorielles": true,
+    "activation_suggestions_optimisation": true
+  },
+
+  "exceptions_autorisees": {
+    "description": "Liste des exceptions aux règles standard",
+    "exceptions": [
+      {
+        "id": "EXC_001",
+        "nom": "Écriture d'à-nouveau",
+        "description": "Autoriser les écritures d'à-nouveau même avec des comptes inhabituels",
+        "regles_ignorees": ["CPT_002"],
+        "conditions": ["journal = 'AN'", "libelle LIKE '%à-nouveau%'"]
+      },
+      {
+        "id": "EXC_002", 
+        "nom": "Correction d'erreur",
+        "description": "Autoriser les corrections sur périodes antérieures",
+        "regles_ignorees": ["DAT_003"],
+        "conditions": ["libelle LIKE '%correction%'", "validation_superviseur = true"]
+      }
+    ]
+  }
+}

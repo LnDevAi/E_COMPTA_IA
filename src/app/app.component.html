@@ -1,26 +1,77 @@
-<div class="app-container">
-  <h1>🚀 E COMPTA IA</h1>
-  <h2>Plateforme Comptable SYSCOHADA AUDCIF</h2>
-  
-  <div class="status">
-    ✅ Application Angular fonctionnelle !
+<!-- HEADER PRINCIPAL -->
+<header class="app-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="logo-section">
+        <h1 class="app-title">
+          <i class="material-icons">calculate</i>
+          {{ title }}
+        </h1>
+        <span class="version">v2.1 - OHADA AUDCIF</span>
+      </div>
+      
+      <nav class="main-navigation">
+        <ul class="nav-menu">
+          <li *ngFor="let item of menuItems" class="nav-item">
+            <a 
+              [routerLink]="item.route" 
+              routerLinkActive="active"
+              class="nav-link"
+              [title]="item.description">
+              <i class="material-icons">{{ item.icon }}</i>
+              <span>{{ item.title }}</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="header-actions">
+        <button class="btn-action" title="Notifications">
+          <i class="material-icons">notifications</i>
+        </button>
+        <button class="btn-action" title="Paramètres">
+          <i class="material-icons">settings</i>
+        </button>
+        <button class="btn-action" title="Profil utilisateur">
+          <i class="material-icons">account_circle</i>
+        </button>
+      </div>
+    </div>
   </div>
-  
-  <div class="features">
-    <h3>Modules disponibles :</h3>
-    <ul>
-      <li>📊 Tableau de Bord</li>
-      <li>🏢 Identité Entreprise</li>
-      <li>📋 Plan Comptable</li>
-      <li>👥 Gestion Tiers</li>
-      <li>✍️ Saisie Écritures</li>
-      <li>🤖 Assistant IA</li>
-      <li>📚 Journaux</li>
-      <li>📖 Grands Livres</li>
-      <li>⚖️ Balances</li>
-      <li>🏦 Rapprochements</li>
-      <li>📈 États Financiers</li>
-      <li>🏛️ Déclarations</li>
-    </ul>
+</header>
+
+<!-- CONTENU PRINCIPAL -->
+<main class="app-main">
+  <router-outlet></router-outlet>
+</main>
+
+<!-- FOOTER -->
+<footer class="app-footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-info">
+        <p>&copy; 2024 E-COMPTA-IA. Tous droits réservés.</p>
+        <p>Plateforme comptable intelligente pour l'espace OHADA</p>
+      </div>
+      
+      <div class="footer-links">
+        <a href="#" class="footer-link">À propos</a>
+        <a href="#" class="footer-link">Support</a>
+        <a href="#" class="footer-link">Documentation</a>
+        <a href="#" class="footer-link">API</a>
+      </div>
+      
+      <div class="footer-social">
+        <a href="#" class="social-link" title="LinkedIn">
+          <i class="fab fa-linkedin"></i>
+        </a>
+        <a href="#" class="social-link" title="Twitter">
+          <i class="fab fa-twitter"></i>
+        </a>
+        <a href="#" class="social-link" title="GitHub">
+          <i class="fab fa-github"></i>
+        </a>
+      </div>
+    </div>
   </div>
-</div>
+</footer>

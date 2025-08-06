@@ -824,6 +824,24 @@ export const JOURNAUX_SYSCOHADA_DEFAUT: Partial<Journal>[] = [
     icone: 'auto_awesome',
     conformiteSYSCOHADA: true,
     categorieAUDCIF: CategorieAUDCIF.CHARGES_EXPLOITATION
+  },
+  {
+    code: 'PAIE',
+    libelle: 'Journal de Paie',
+    type: TypeJournal.PAIE,
+    nature: NatureJournal.CENTRALISATEUR,
+    couleur: {
+      primaire: '#795548',
+      secondaire: '#BCAAA4',
+      texte: '#FFFFFF',
+      fond: '#EFEBE9',
+      bordure: '#795548',
+      opacite: 0.8,
+      theme: ThemeCouleur.SYSCOHADA
+    },
+    icone: 'groups',
+    conformiteSYSCOHADA: true,
+    categorieAUDCIF: CategorieAUDCIF.CHARGES_PERSONNEL
   }
 ];
 

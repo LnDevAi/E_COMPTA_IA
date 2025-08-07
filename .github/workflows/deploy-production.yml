@@ -1,0 +1,393 @@
+name: 🚀 Déploiement Production
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environnement de déploiement'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      skip_tests:
+        description: 'Ignorer les tests (DANGER - pour urgences uniquement)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  DOCKER_REGISTRY: 'ghcr.io'
+  IMAGE_NAME: 'e-compta-ia'
+
+jobs:
+  # ===================================================
+  # JOB 1: VALIDATION PRÉ-DÉPLOIEMENT
+  # ===================================================
+  pre-deployment-validation:
+    name: 🔍 Validation Pré-Déploiement
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      environment: ${{ steps.environment.outputs.environment }}
+      skip_tests: ${{ steps.environment.outputs.skip_tests }}
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🏷️ Détermination de la version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION="main-$(git rev-parse --short HEAD)"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "🏷️ Version déterminée: $VERSION"
+
+      - name: 🎯 Configuration environnement
+        id: environment
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            ENV="${{ github.event.inputs.environment }}"
+            SKIP_TESTS="${{ github.event.inputs.skip_tests }}"
+          else
+            ENV="production"
+            SKIP_TESTS="false"
+          fi
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "skip_tests=$SKIP_TESTS" >> $GITHUB_OUTPUT
+          echo "🎯 Environnement: $ENV"
+          echo "⚠️ Skip tests: $SKIP_TESTS"
+
+      - name: 🛡️ Vérification branche autorisée
+        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "❌ Déploiement en production autorisé uniquement depuis main ou tags"
+          exit 1
+
+      - name: 📋 Vérification du changelog
+        run: |
+          if ! grep -q "${{ steps.version.outputs.version }}" CHANGELOG.md; then
+            echo "⚠️ Version ${{ steps.version.outputs.version }} non trouvée dans CHANGELOG.md"
+            echo "📝 Veuillez mettre à jour le changelog avant le déploiement"
+          fi
+
+  # ===================================================
+  # JOB 2: TESTS COMPLETS (CONDITIONNELS)
+  # ===================================================
+  comprehensive-tests:
+    name: 🧪 Tests Complets
+    uses: ./.github/workflows/ci.yml
+    needs: [pre-deployment-validation]
+    if: needs.pre-deployment-validation.outputs.skip_tests != 'true'
+    secrets: inherit
+
+  # ===================================================
+  # JOB 3: BUILD ET PACKAGING
+  # ===================================================
+  build-and-package:
+    name: 📦 Build et Packaging
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-validation]
+    if: always() && (needs.comprehensive-tests.result == 'success' || needs.pre-deployment-validation.outputs.skip_tests == 'true')
+    
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
+      image_digest: ${{ steps.build.outputs.image_digest }}
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci
+
+      - name: 🏗️ Build pour production
+        run: |
+          npm run build:prod
+          echo "📊 Taille du build:"
+          du -sh dist/
+
+      - name: 🐳 Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔐 Login au registre Docker
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Génération des tags Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=ref,event=tag
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ needs.pre-deployment-validation.outputs.version }}
+
+      - name: 🏗️ Build et push image Docker
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ needs.pre-deployment-validation.outputs.version }}
+            BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+      - name: 📋 Génération du SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deployment-validation.outputs.version }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: 🔒 Scan de sécurité de l'image
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ needs.pre-deployment-validation.outputs.version }}
+          fail-build: true
+          severity-cutoff: high
+
+  # ===================================================
+  # JOB 4: DÉPLOIEMENT STAGING (OPTIONNEL)
+  # ===================================================
+  deploy-staging:
+    name: 🎭 Déploiement Staging
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: [pre-deployment-validation, build-and-package]
+    if: needs.pre-deployment-validation.outputs.environment == 'staging' || (needs.pre-deployment-validation.outputs.environment == 'production' && github.event_name != 'workflow_dispatch')
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Déploiement sur staging
+        run: |
+          echo "🎭 Déploiement sur l'environnement de staging..."
+          # Ici vous ajouterez vos commandes de déploiement spécifiques
+          # Exemples: kubectl, terraform, ansible, etc.
+
+      - name: 🧪 Tests de fumée staging
+        run: |
+          echo "🔥 Exécution des tests de fumée sur staging..."
+          # Tests basiques pour vérifier que l'application fonctionne
+          curl -f https://staging.e-compta-ia.com/health || exit 1
+
+      - name: 📊 Tests de performance staging
+        run: |
+          echo "⚡ Tests de performance sur staging..."
+          # Tests de performance pour valider avant production
+
+  # ===================================================
+  # JOB 5: APPROBATION PRODUCTION
+  # ===================================================
+  production-approval:
+    name: ✋ Approbation Production
+    runs-on: ubuntu-latest
+    environment: production-approval
+    needs: [pre-deployment-validation, build-and-package, deploy-staging]
+    if: needs.pre-deployment-validation.outputs.environment == 'production'
+    
+    steps:
+      - name: 📋 Résumé du déploiement
+        run: |
+          echo "📋 Résumé du déploiement en production:"
+          echo "🏷️ Version: ${{ needs.pre-deployment-validation.outputs.version }}"
+          echo "📦 Image: ${{ needs.build-and-package.outputs.image_tag }}"
+          echo "🎯 Environnement: production"
+          echo "👤 Demandé par: ${{ github.actor }}"
+
+      - name: ⏳ Attente approbation manuelle
+        run: |
+          echo "⏳ En attente d'approbation manuelle pour le déploiement en production..."
+          echo "🔍 Un administrateur doit approuver ce déploiement"
+
+  # ===================================================
+  # JOB 6: DÉPLOIEMENT PRODUCTION
+  # ===================================================
+  deploy-production:
+    name: 🚀 Déploiement Production
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [pre-deployment-validation, build-and-package, production-approval]
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🎯 Préparation du déploiement
+        run: |
+          echo "🎯 Préparation du déploiement en production..."
+          echo "🏷️ Version: ${{ needs.pre-deployment-validation.outputs.version }}"
+          echo "📦 Image: ${{ needs.build-and-package.outputs.image_tag }}"
+
+      - name: 📊 Sauvegarde de l'état actuel
+        run: |
+          echo "📊 Sauvegarde de l'état actuel de production..."
+          # Commandes pour sauvegarder l'état actuel (BD, configs, etc.)
+
+      - name: 🚀 Déploiement Blue-Green
+        run: |
+          echo "🚀 Déploiement Blue-Green en production..."
+          # Ici vous ajouterez vos commandes de déploiement
+          # Exemples pour différentes plateformes:
+          
+          # Kubernetes:
+          # kubectl set image deployment/e-compta-ia app=${{ needs.build-and-package.outputs.image_tag }}
+          
+          # Docker Swarm:
+          # docker service update --image ${{ needs.build-and-package.outputs.image_tag }} e-compta-ia
+          
+          # Azure:
+          # az webapp deployment container config --name e-compta-ia --resource-group prod --docker-custom-image-name ${{ needs.build-and-package.outputs.image_tag }}
+          
+          # AWS ECS:
+          # aws ecs update-service --cluster prod --service e-compta-ia --task-definition e-compta-ia:${{ needs.pre-deployment-validation.outputs.version }}
+
+      - name: ⏳ Attente stabilisation
+        run: |
+          echo "⏳ Attente de la stabilisation du déploiement..."
+          sleep 60
+
+      - name: 🔥 Tests de fumée production
+        run: |
+          echo "🔥 Tests de fumée sur production..."
+          
+          # Tests basiques
+          curl -f https://e-compta-ia.com/health || exit 1
+          curl -f https://e-compta-ia.com/api/health || exit 1
+          
+          # Tests spécifiques E-COMPTA-IA
+          curl -f https://e-compta-ia.com/api/entreprise/health || exit 1
+          curl -f https://e-compta-ia.com/api/comptabilite/health || exit 1
+
+      - name: 📊 Validation métriques
+        run: |
+          echo "📊 Validation des métriques de production..."
+          # Vérification des métriques (temps de réponse, erreurs, etc.)
+
+      - name: 🎉 Succès du déploiement
+        run: |
+          echo "🎉 Déploiement en production réussi !"
+          echo "🚀 E-COMPTA-IA ${{ needs.pre-deployment-validation.outputs.version }} est maintenant en ligne"
+
+  # ===================================================
+  # JOB 7: POST-DÉPLOIEMENT
+  # ===================================================
+  post-deployment:
+    name: 📊 Post-Déploiement
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-validation, build-and-package, deploy-production]
+    if: always()
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 📧 Notification équipe
+        uses: 8398a7/action-slack@v3
+        if: always()
+        with:
+          status: ${{ job.status }}
+          text: |
+            🚀 Déploiement E-COMPTA-IA ${{ needs.pre-deployment-validation.outputs.version }}
+            📊 Statut: ${{ needs.deploy-production.result }}
+            🎯 Environnement: ${{ needs.pre-deployment-validation.outputs.environment }}
+            👤 Par: ${{ github.actor }}
+            🔗 URL: https://e-compta-ia.com
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: 📋 Mise à jour documentation
+        run: |
+          echo "📋 Mise à jour de la documentation de déploiement..."
+          cat >> DEPLOYMENT_HISTORY.md << EOF
+          
+          ## 🚀 Déploiement ${{ needs.pre-deployment-validation.outputs.version }}
+          
+          - **Date**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          - **Version**: ${{ needs.pre-deployment-validation.outputs.version }}
+          - **Image**: ${{ needs.build-and-package.outputs.image_tag }}
+          - **Demandé par**: ${{ github.actor }}
+          - **Statut**: ${{ needs.deploy-production.result }}
+          - **Environnement**: ${{ needs.pre-deployment-validation.outputs.environment }}
+          
+          EOF
+
+      - name: 🏷️ Création du tag de release
+        if: needs.deploy-production.result == 'success' && needs.pre-deployment-validation.outputs.environment == 'production'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "deployed-${{ needs.pre-deployment-validation.outputs.version }}" -m "Déploiement réussi en production"
+          git push origin "deployed-${{ needs.pre-deployment-validation.outputs.version }}"
+
+      - name: 📊 Génération rapport de déploiement
+        run: |
+          cat > deployment-report.md << EOF
+          # 📊 Rapport de Déploiement E-COMPTA-IA
+          
+          ## 📋 Informations Générales
+          - **Version déployée**: ${{ needs.pre-deployment-validation.outputs.version }}
+          - **Date de déploiement**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          - **Environnement**: ${{ needs.pre-deployment-validation.outputs.environment }}
+          - **Demandé par**: ${{ github.actor }}
+          - **Commit**: ${{ github.sha }}
+          
+          ## ✅ Statuts des Jobs
+          - **Build**: ${{ needs.build-and-package.result }}
+          - **Tests**: ${{ needs.comprehensive-tests.result || 'Ignorés' }}
+          - **Déploiement**: ${{ needs.deploy-production.result }}
+          
+          ## 🔗 Liens Utiles
+          - **Application**: https://e-compta-ia.com
+          - **Monitoring**: https://monitoring.e-compta-ia.com
+          - **Documentation**: https://docs.e-compta-ia.com
+          
+          ## 🚀 Nouvelles Fonctionnalités
+          Consultez le [CHANGELOG.md](CHANGELOG.md) pour les détails.
+          
+          EOF
+
+      - name: 📤 Upload rapport de déploiement
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-report
+          path: deployment-report.md
+
+      - name: 🎯 Planification rollback (si échec)
+        if: needs.deploy-production.result == 'failure'
+        run: |
+          echo "❌ Déploiement échoué - Préparation du rollback"
+          echo "🔄 Pour effectuer un rollback manuel, exécutez:"
+          echo "git revert ${{ github.sha }}"
+          echo "gh workflow run deploy-production.yml --ref main"

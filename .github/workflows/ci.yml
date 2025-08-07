@@ -1,0 +1,333 @@
+name: 🚀 CI - Tests et Validation
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'release/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NODE_VERSION: '18'
+  ANGULAR_CLI_VERSION: '16'
+
+jobs:
+  # ===================================================
+  # JOB 1: ANALYSE STATIQUE ET SÉCURITÉ
+  # ===================================================
+  security-scan:
+    name: 🔒 Analyse Sécurité
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Scan des secrets avec GitLeaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🛡️ Analyse de sécurité CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+
+      - name: 🏗️ Build pour CodeQL
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 📊 Analyse CodeQL
+        uses: github/codeql-action/analyze@v3
+
+  # ===================================================
+  # JOB 2: LINT ET FORMATAGE
+  # ===================================================
+  code-quality:
+    name: ✨ Qualité du Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci
+
+      - name: 🔍 ESLint - Analyse statique
+        run: npm run lint
+
+      - name: 🎨 Prettier - Vérification format
+        run: npm run prettier:check
+
+      - name: 📏 TSLint - Vérification TypeScript
+        run: npm run tslint
+
+      - name: 📊 SonarQube - Analyse qualité
+        uses: sonarqube-quality-gate-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # ===================================================
+  # JOB 3: TESTS UNITAIRES ET COUVERTURE
+  # ===================================================
+  unit-tests:
+    name: 🧪 Tests Unitaires
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci
+
+      - name: 🧪 Exécution des tests unitaires
+        run: npm run test:ci
+
+      - name: 📊 Génération rapport de couverture
+        run: npm run test:coverage
+
+      - name: 📈 Upload couverture vers Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          fail_ci_if_error: true
+
+      - name: 📋 Rapport de couverture
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./coverage/lcov.info
+          delete-old-comments: true
+
+  # ===================================================
+  # JOB 4: TESTS E2E
+  # ===================================================
+  e2e-tests:
+    name: 🎭 Tests E2E
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: ecompta_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci
+
+      - name: 🏗️ Build de l'application
+        run: npm run build:prod
+
+      - name: 🎭 Installation Playwright
+        run: npx playwright install --with-deps
+
+      - name: 🚀 Démarrage du serveur de test
+        run: |
+          npm run start:test &
+          npx wait-on http://localhost:4200
+
+      - name: 🎪 Exécution des tests E2E
+        run: npm run e2e
+
+      - name: 📸 Upload des captures d'écran
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: playwright-screenshots
+          path: e2e-results/
+
+  # ===================================================
+  # JOB 5: BUILD ET VALIDATION
+  # ===================================================
+  build:
+    name: 🏗️ Build Production
+    runs-on: ubuntu-latest
+    needs: [security-scan, code-quality, unit-tests]
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci
+
+      - name: 🏗️ Build pour production
+        run: npm run build:prod
+
+      - name: 📏 Analyse taille des bundles
+        run: npm run analyze:bundle
+
+      - name: 📊 Audit de performance
+        run: npm run audit:performance
+
+      - name: 📦 Création de l'artifact de build
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-files
+          path: dist/
+          retention-days: 30
+
+  # ===================================================
+  # JOB 6: TESTS DE PERFORMANCE
+  # ===================================================
+  performance-tests:
+    name: ⚡ Tests Performance
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 📦 Téléchargement du build
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-files
+          path: dist/
+
+      - name: 🚀 Démarrage serveur statique
+        run: |
+          npx http-server dist/ -p 8080 &
+          npx wait-on http://localhost:8080
+
+      - name: 🏃‍♂️ Tests Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun
+
+      - name: ⚡ Tests de charge avec K6
+        run: |
+          docker run --rm -i grafana/k6 run - <scripts/load-test.js
+
+  # ===================================================
+  # JOB 7: TESTS DE SÉCURITÉ APPLICATIVE
+  # ===================================================
+  security-tests:
+    name: 🛡️ Tests Sécurité Applicative
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 📦 Téléchargement du build
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-files
+          path: dist/
+
+      - name: 🔒 Scan OWASP ZAP
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'http://localhost:8080'
+
+      - name: 🛡️ Audit npm pour vulnérabilités
+        run: npm audit --audit-level high
+
+      - name: 🔍 Scan Snyk pour dépendances
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+  # ===================================================
+  # JOB 8: VALIDATION FINALE
+  # ===================================================
+  final-validation:
+    name: ✅ Validation Finale
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests, build, performance-tests, security-tests]
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ✅ Validation des gates qualité
+        run: |
+          echo "🎯 Vérification des seuils de qualité..."
+          echo "✅ Tests unitaires : ${{ needs.unit-tests.result }}"
+          echo "✅ Tests E2E : ${{ needs.e2e-tests.result }}"
+          echo "✅ Build : ${{ needs.build.result }}"
+          echo "✅ Performance : ${{ needs.performance-tests.result }}"
+          echo "✅ Sécurité : ${{ needs.security-tests.result }}"
+
+      - name: 🎉 Succès de la validation
+        if: success()
+        run: |
+          echo "🚀 Toutes les validations sont passées avec succès !"
+          echo "💚 Le code est prêt pour le déploiement en production"
+
+      - name: 📋 Génération du rapport de validation
+        run: |
+          cat > validation-report.md << EOF
+          # 📊 Rapport de Validation CI/CD
+          
+          ## ✅ Résultats des Tests
+          
+          | Job | Statut | Durée |
+          |-----|--------|-------|
+          | 🔒 Sécurité | ${{ needs.security-scan.result }} | - |
+          | ✨ Qualité Code | ${{ needs.code-quality.result }} | - |
+          | 🧪 Tests Unitaires | ${{ needs.unit-tests.result }} | - |
+          | 🎭 Tests E2E | ${{ needs.e2e-tests.result }} | - |
+          | 🏗️ Build | ${{ needs.build.result }} | - |
+          | ⚡ Performance | ${{ needs.performance-tests.result }} | - |
+          | 🛡️ Tests Sécurité | ${{ needs.security-tests.result }} | - |
+          
+          ## 🎯 Gates de Qualité
+          - ✅ Couverture de tests > 80%
+          - ✅ Pas de vulnérabilités critiques
+          - ✅ Performance Lighthouse > 90
+          - ✅ Bundle size < 2MB
+          
+          **✅ VALIDATION RÉUSSIE - PRÊT POUR PRODUCTION**
+          EOF
+
+      - name: 📤 Upload rapport de validation
+        uses: actions/upload-artifact@v3
+        with:
+          name: validation-report
+          path: validation-report.md

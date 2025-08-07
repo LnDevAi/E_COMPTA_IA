@@ -1,0 +1,400 @@
+name: 🔍 Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # ===================================================
+  # JOB 1: VALIDATION PR METADATA
+  # ===================================================
+  pr-validation:
+    name: 📋 Validation PR
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 📝 Vérification titre PR
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          # Vérifier format du titre (ex: "feat: nouvelle fonctionnalité")
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci)(\(.+\))?: .+ ]]; then
+            echo "❌ Le titre de la PR doit suivre le format: type(scope): description"
+            echo "📝 Exemples: feat(comptabilite): ajout module paie"
+            echo "📝          fix(ui): correction affichage dashboard"
+            exit 1
+          fi
+          
+          echo "✅ Titre de la PR valide: $PR_TITLE"
+
+      - name: 📋 Vérification description PR
+        run: |
+          if [[ -z "${{ github.event.pull_request.body }}" ]]; then
+            echo "❌ La PR doit avoir une description"
+            exit 1
+          fi
+          
+          # Vérifier présence des sections requises
+          BODY="${{ github.event.pull_request.body }}"
+          
+          if [[ ! "$BODY" =~ "## 🎯 Objectif" ]]; then
+            echo "⚠️ Section '## 🎯 Objectif' manquante dans la description"
+          fi
+          
+          if [[ ! "$BODY" =~ "## 🔧 Changements" ]]; then
+            echo "⚠️ Section '## 🔧 Changements' manquante dans la description"
+          fi
+          
+          if [[ ! "$BODY" =~ "## 🧪 Tests" ]]; then
+            echo "⚠️ Section '## 🧪 Tests' manquante dans la description"
+          fi
+
+      - name: 🏷️ Vérification labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+            const requiredLabels = ['type/', 'size/', 'priority/'];
+            
+            for (const prefix of requiredLabels) {
+              const hasLabel = labels.some(label => label.startsWith(prefix));
+              if (!hasLabel) {
+                console.log(`⚠️ Label avec préfixe '${prefix}' manquant`);
+              }
+            }
+
+  # ===================================================
+  # JOB 2: ANALYSE DIFF ET IMPACT
+  # ===================================================
+  impact-analysis:
+    name: 📊 Analyse d'Impact
+    runs-on: ubuntu-latest
+    
+    outputs:
+      has_migrations: ${{ steps.changes.outputs.has_migrations }}
+      has_breaking_changes: ${{ steps.changes.outputs.has_breaking_changes }}
+      affected_modules: ${{ steps.changes.outputs.affected_modules }}
+      test_coverage_required: ${{ steps.changes.outputs.test_coverage_required }}
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Analyse des changements
+        id: changes
+        run: |
+          # Fichiers modifiés
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "📁 Fichiers modifiés:"
+          echo "$CHANGED_FILES"
+          
+          # Détection des migrations
+          if echo "$CHANGED_FILES" | grep -q "migrations/\|schema\."; then
+            echo "has_migrations=true" >> $GITHUB_OUTPUT
+            echo "🗄️ Migrations de base de données détectées"
+          else
+            echo "has_migrations=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Détection des breaking changes
+          if echo "$CHANGED_FILES" | grep -q "models/\|interfaces/\|api/"; then
+            echo "has_breaking_changes=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Changements potentiellement breaking détectés"
+          else
+            echo "has_breaking_changes=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Modules affectés
+          AFFECTED_MODULES=""
+          if echo "$CHANGED_FILES" | grep -q "modules/comptabilite/"; then
+            AFFECTED_MODULES="$AFFECTED_MODULES,comptabilite"
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/entreprise/"; then
+            AFFECTED_MODULES="$AFFECTED_MODULES,entreprise"
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/elearning/"; then
+            AFFECTED_MODULES="$AFFECTED_MODULES,elearning"
+          fi
+          if echo "$CHANGED_FILES" | grep -q "modules/assistant-ia/"; then
+            AFFECTED_MODULES="$AFFECTED_MODULES,assistant-ia"
+          fi
+          
+          echo "affected_modules=${AFFECTED_MODULES#,}" >> $GITHUB_OUTPUT
+          echo "📦 Modules affectés: ${AFFECTED_MODULES#,}"
+          
+          # Couverture de tests requise
+          if echo "$CHANGED_FILES" | grep -q "\.ts$\|\.js$"; then
+            echo "test_coverage_required=true" >> $GITHUB_OUTPUT
+            echo "🧪 Couverture de tests requise"
+          else
+            echo "test_coverage_required=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📊 Statistiques du diff
+        run: |
+          echo "📊 Statistiques des changements:"
+          git diff --stat origin/${{ github.base_ref }}...HEAD
+          
+          echo ""
+          echo "📈 Métriques:"
+          LINES_ADDED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{added+=$1} END {print added}')
+          LINES_DELETED=$(git diff --numstat origin/${{ github.base_ref }}...HEAD | awk '{deleted+=$2} END {print deleted}')
+          FILES_CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
+          
+          echo "- Fichiers modifiés: $FILES_CHANGED"
+          echo "- Lignes ajoutées: $LINES_ADDED"
+          echo "- Lignes supprimées: $LINES_DELETED"
+          
+          # Alerte si gros changement
+          if [[ $LINES_ADDED -gt 500 ]] || [[ $FILES_CHANGED -gt 20 ]]; then
+            echo "⚠️ Changement important détecté - révision approfondie recommandée"
+          fi
+
+  # ===================================================
+  # JOB 3: TESTS SPÉCIALISÉS PAR MODULE
+  # ===================================================
+  module-specific-tests:
+    name: 🧪 Tests Modules Spécifiques
+    runs-on: ubuntu-latest
+    needs: [impact-analysis]
+    if: needs.impact-analysis.outputs.affected_modules != ''
+    
+    strategy:
+      matrix:
+        module: ${{ fromJson(format('[{0}]', needs.impact-analysis.outputs.affected_modules)) }}
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Installation des dépendances
+        run: npm ci
+
+      - name: 🧪 Tests unitaires du module ${{ matrix.module }}
+        run: |
+          echo "🧪 Tests du module: ${{ matrix.module }}"
+          npm run test -- --testPathPattern="modules/${{ matrix.module }}"
+
+      - name: 📊 Tests d'intégration du module ${{ matrix.module }}
+        run: |
+          echo "🔗 Tests d'intégration pour: ${{ matrix.module }}"
+          npm run test:integration -- --grep "${{ matrix.module }}"
+
+  # ===================================================
+  # JOB 4: VALIDATION SÉCURITÉ RENFORCÉE
+  # ===================================================
+  security-deep-scan:
+    name: 🔒 Scan Sécurité Approfondi
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Scan des nouveaux secrets
+        run: |
+          echo "🔍 Recherche de secrets dans les nouveaux commits..."
+          git log --oneline origin/${{ github.base_ref }}..HEAD | while read commit; do
+            echo "Vérification du commit: $commit"
+            # Ici vous ajouteriez vos vérifications de secrets
+          done
+
+      - name: 🛡️ Analyse des permissions de fichiers
+        run: |
+          echo "🛡️ Vérification des permissions de fichiers..."
+          find . -type f -executable | grep -v ".git" | while read file; do
+            echo "⚠️ Fichier exécutable: $file"
+          done
+
+      - name: 📋 Vérification des dépendances modifiées
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "package\.json\|package-lock\.json"; then
+            echo "📦 Dépendances modifiées détectées"
+            echo "🔍 Analyse des nouvelles dépendances..."
+            
+            # Comparer les dépendances
+            git show origin/${{ github.base_ref }}:package.json > package.json.old
+            
+            echo "📊 Nouvelles dépendances ajoutées:"
+            comm -13 <(jq -r '.dependencies | keys[]' package.json.old | sort) <(jq -r '.dependencies | keys[]' package.json | sort) || true
+            
+            echo "📊 Nouvelles devDependencies ajoutées:"
+            comm -13 <(jq -r '.devDependencies | keys[]' package.json.old | sort) <(jq -r '.devDependencies | keys[]' package.json | sort) || true
+          fi
+
+  # ===================================================
+  # JOB 5: REVUE AUTOMATIQUE
+  # ===================================================
+  automated-review:
+    name: 🤖 Revue Automatique
+    runs-on: ubuntu-latest
+    needs: [pr-validation, impact-analysis, module-specific-tests]
+    if: always()
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: 🤖 Génération du rapport de revue
+        id: review
+        run: |
+          cat > review-report.md << EOF
+          # 🤖 Rapport de Revue Automatique
+          
+          ## 📋 Informations Générales
+          - **Auteur**: ${{ github.event.pull_request.user.login }}
+          - **Base**: ${{ github.base_ref }}
+          - **Branche**: ${{ github.head_ref }}
+          - **Modules affectés**: ${{ needs.impact-analysis.outputs.affected_modules }}
+          
+          ## ✅ Validations
+          | Validation | Statut |
+          |------------|--------|
+          | Métadonnées PR | ${{ needs.pr-validation.result }} |
+          | Analyse d'impact | ${{ needs.impact-analysis.result }} |
+          | Tests modules | ${{ needs.module-specific-tests.result }} |
+          
+          ## 🎯 Points d'Attention
+          EOF
+          
+          # Ajout des points d'attention selon l'analyse
+          if [[ "${{ needs.impact-analysis.outputs.has_migrations }}" == "true" ]]; then
+            echo "- 🗄️ **Migrations détectées** - Vérifiez la compatibilité et les rollbacks" >> review-report.md
+          fi
+          
+          if [[ "${{ needs.impact-analysis.outputs.has_breaking_changes }}" == "true" ]]; then
+            echo "- ⚠️ **Changements breaking** - Documentez et planifiez la migration" >> review-report.md
+          fi
+          
+          cat >> review-report.md << EOF
+          
+          ## 🚀 Recommandations
+          - Assurez-vous que tous les tests passent
+          - Vérifiez la couverture de code
+          - Documentez les changements importants
+          - Testez en environnement de staging
+          
+          EOF
+
+      - name: 💬 Commentaire automatique
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('review-report.md', 'utf8');
+            
+            // Chercher un commentaire existant
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🤖 Rapport de Revue Automatique')
+            );
+            
+            if (botComment) {
+              // Mettre à jour le commentaire existant
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: report
+              });
+            } else {
+              // Créer un nouveau commentaire
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: report
+              });
+            }
+
+  # ===================================================
+  # JOB 6: VALIDATION FINALE PR
+  # ===================================================
+  pr-final-validation:
+    name: ✅ Validation Finale PR
+    runs-on: ubuntu-latest
+    needs: [pr-validation, impact-analysis, module-specific-tests, security-deep-scan, automated-review]
+    if: always()
+    
+    steps:
+      - name: 📊 Résumé des validations
+        run: |
+          echo "📊 Résumé des validations de la PR:"
+          echo "- Métadonnées PR: ${{ needs.pr-validation.result }}"
+          echo "- Analyse d'impact: ${{ needs.impact-analysis.result }}"
+          echo "- Tests modules: ${{ needs.module-specific-tests.result }}"
+          echo "- Sécurité: ${{ needs.security-deep-scan.result }}"
+          echo "- Revue automatique: ${{ needs.automated-review.result }}"
+
+      - name: ✅ Validation globale
+        run: |
+          FAILED_JOBS=""
+          
+          if [[ "${{ needs.pr-validation.result }}" == "failure" ]]; then
+            FAILED_JOBS="$FAILED_JOBS pr-validation"
+          fi
+          
+          if [[ "${{ needs.impact-analysis.result }}" == "failure" ]]; then
+            FAILED_JOBS="$FAILED_JOBS impact-analysis"
+          fi
+          
+          if [[ "${{ needs.module-specific-tests.result }}" == "failure" ]]; then
+            FAILED_JOBS="$FAILED_JOBS module-tests"
+          fi
+          
+          if [[ "${{ needs.security-deep-scan.result }}" == "failure" ]]; then
+            FAILED_JOBS="$FAILED_JOBS security"
+          fi
+          
+          if [[ -n "$FAILED_JOBS" ]]; then
+            echo "❌ Échecs détectés dans: $FAILED_JOBS"
+            echo "🔄 Corrigez les erreurs avant de merger"
+            exit 1
+          else
+            echo "✅ Toutes les validations sont passées avec succès !"
+            echo "🎉 La PR est prête pour la revue humaine"
+          fi
+
+      - name: 🏷️ Mise à jour des labels
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          script: |
+            // Ajouter le label "ready-for-review" si toutes les validations passent
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['ready-for-review', 'automated-validation-passed']
+            });
+
+      - name: 📈 Métriques de la PR
+        run: |
+          echo "📈 Métriques finales de la PR:"
+          echo "- Durée totale de validation: ${{ github.event.pull_request.created_at }}"
+          echo "- Nombre de commits: $(git log --oneline origin/${{ github.base_ref }}..HEAD | wc -l)"
+          echo "- Complexité estimée: $(echo '${{ needs.impact-analysis.outputs.affected_modules }}' | tr ',' '\n' | wc -l) modules affectés"

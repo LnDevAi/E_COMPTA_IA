@@ -525,13 +525,15 @@ export interface StylePagination {
 
 export type NiveauDifficulte = 'FACILE' | 'INTERMEDIAIRE' | 'AVANCE' | 'EXPERT';
 
-export type CategorieComptable = 
-  | 'COMPTABILITE_GENERALE'
-  | 'COMPTABILITE_ANALYTIQUE'
-  | 'FISCALITE'
-  | 'AUDIT'
-  | 'GESTION_FINANCIERE'
-  | 'SYSCOHADA';
+export enum CategorieComptable {
+  COMPTABILITE_GENERALE = 'COMPTABILITE_GENERALE',
+  COMPTABILITE_ANALYTIQUE = 'COMPTABILITE_ANALYTIQUE',
+  FISCALITE = 'FISCALITE',
+  AUDIT = 'AUDIT',
+  GESTION_FINANCIERE = 'GESTION_FINANCIERE',
+  SYSCOHADA = 'SYSCOHADA',
+  ANALYSE_FINANCIERE = 'ANALYSE_FINANCIERE'
+}
 
 export type RythmeApprentissage = 'LENT' | 'REGULIER' | 'RAPIDE' | 'INTENSIF';
 
@@ -543,13 +545,14 @@ export type RareteBadge = 'COMMUN' | 'RARE' | 'LEGENDAIRE' | 'UNIQUE';
 // TYPES PAIEMENT
 // ===================================
 
-export type MethodePaiement = 
-  | 'MOBILE_MONEY'
-  | 'CARTE_CREDIT'
-  | 'VIREMENT_BANCAIRE'
-  | 'PAYPAL'
-  | 'CHEQUE'
-  | 'ESPECES';
+export enum MethodePaiement {
+  MOBILE_MONEY = 'MOBILE_MONEY',
+  CARTE_CREDIT = 'CARTE_CREDIT',
+  VIREMENT_BANCAIRE = 'VIREMENT_BANCAIRE',
+  PAYPAL = 'PAYPAL',
+  CHEQUE = 'CHEQUE',
+  ESPECES = 'ESPECES'
+}
 
 export type TypePaiement = MethodePaiement; // Alias pour compatibilité
 
@@ -560,6 +563,417 @@ export type TypePaiement = MethodePaiement; // Alias pour compatibilité
 export type PrioriteControle = 'FAIBLE' | 'MOYENNE' | 'ELEVEE' | 'CRITIQUE';
 
 export type SensComptable = 'DEBIT' | 'CREDIT';
+
+// ===================================
+// TYPES E-LEARNING SUPPLÉMENTAIRES
+// ===================================
+
+// Types de ressources et documents
+export interface Ressource {
+  id: string;
+  nom: string;
+  type: 'PDF' | 'VIDEO' | 'AUDIO' | 'LIEN' | 'DOCUMENT';
+  url: string;
+  taille?: number;
+  duree?: number;
+  description?: string;
+}
+
+export interface Schema {
+  id: string;
+  nom: string;
+  type: 'DIAGRAMME' | 'FLOWCHART' | 'MINDMAP' | 'ORGANIGRAMME';
+  contenu: string;
+  description: string;
+}
+
+export interface ExempleChiffre {
+  id: string;
+  titre: string;
+  valeurs: { [key: string]: number };
+  explication: string;
+  contexte: string;
+}
+
+export interface ExerciceInteractif {
+  id: string;
+  nom: string;
+  type: 'DRAG_DROP' | 'QCM_INTERACTIF' | 'SIMULATION' | 'CALCUL';
+  contenu: any;
+  solution: any;
+  dureeEstimee: number;
+}
+
+export interface QuizRapide {
+  id: string;
+  questions: string[];
+  reponses: string[][];
+  bonnesReponses: number[];
+  explication: string[];
+}
+
+export interface PointVerification {
+  id: string;
+  titre: string;
+  description: string;
+  methodeVerification: string;
+  critereReussite: string;
+}
+
+// Types multimédias
+export interface CalculatriceInteractive {
+  id: string;
+  type: 'FINANCIERE' | 'SCIENTIFIQUE' | 'COMPTABLE';
+  fonctions: string[];
+  presets: { [nom: string]: any };
+}
+
+export interface ExerciceCode {
+  id: string;
+  langage: 'JAVASCRIPT' | 'PYTHON' | 'SQL';
+  codeInitial: string;
+  codeAttendu: string;
+  tests: string[];
+}
+
+export interface SousTitre {
+  id: string;
+  langue: string;
+  contenu: { temps: number; texte: string }[];
+}
+
+export interface QualiteVideo {
+  resolution: string;
+  bitrate: number;
+  url: string;
+  taille: number;
+}
+
+export interface ChapitreVideo {
+  id: string;
+  titre: string;
+  tempsDebut: number;
+  tempsFin: number;
+  description?: string;
+}
+
+export interface MarqueurVideo {
+  id: string;
+  temps: number;
+  titre: string;
+  description: string;
+  type: 'INFO' | 'EXERCICE' | 'RAPPEL' | 'ATTENTION';
+}
+
+export interface QuestionEmbedded {
+  id: string;
+  temps: number;
+  question: string;
+  reponses: string[];
+  bonneReponse: number;
+  explication: string;
+}
+
+export interface AnnotationVideo {
+  id: string;
+  temps: number;
+  position: { x: number; y: number };
+  contenu: string;
+  type: 'TEXTE' | 'LIEN' | 'POPUP';
+}
+
+// Types exercices
+export type DifficulteExercice = 'DEBUTANT' | 'INTERMEDIAIRE' | 'AVANCE' | 'EXPERT';
+
+export interface EtapeExercice {
+  id: string;
+  ordre: number;
+  description: string;
+  action: string;
+  validation: string;
+}
+
+export type SolutionType = 'UNIQUE' | 'MULTIPLE' | 'OUVERTE' | 'CALCUL';
+
+export interface CritereEvaluation {
+  id: string;
+  nom: string;
+  description: string;
+  poids: number;
+  baremePoints: number;
+}
+
+export interface FeedbackExercice {
+  condition: string;
+  message: string;
+  type: 'SUCCESS' | 'WARNING' | 'ERROR' | 'INFO';
+  conseils?: string[];
+}
+
+export interface ErreurCourante {
+  id: string;
+  description: string;
+  explication: string;
+  correction: string;
+  frequence: number;
+}
+
+// Types quiz et évaluations
+export type TypeQuiz = 'QCM' | 'VRAI_FAUX' | 'CORRESPONDANCE' | 'CLASSEMENT' | 'SAISIE_LIBRE';
+
+export interface StatistiquesQuiz {
+  nombreTentatives: number;
+  moyenneScore: number;
+  tempsmoyen: number;
+  tauxReussite: number;
+  questionsProblematiques: string[];
+}
+
+export interface TableauComptable {
+  id: string;
+  nom: string;
+  colonnes: string[];
+  lignes: any[][];
+  totaux?: any[];
+}
+
+export interface ReponseQuestion {
+  id: string;
+  texte: string;
+  correcte: boolean;
+  explication?: string;
+  poids?: number;
+}
+
+export type DifficulteQuestion = 'FACILE' | 'MOYENNE' | 'DIFFICILE' | 'EXPERTE';
+
+export interface SectionEvaluation {
+  id: string;
+  nom: string;
+  description: string;
+  questions: string[];
+  dureeMaximale: number;
+  noteMinimale: number;
+}
+
+// Types certification
+export interface BlockchainRecord {
+  hash: string;
+  timestamp: number;
+  previousHash: string;
+  certificatId: string;
+  validation: string;
+}
+
+export type FormatCertificat = 'PDF' | 'PNG' | 'SVG' | 'BADGE_DIGITAL';
+
+// Types progression et analyse
+export interface DifficulteIdentifiee {
+  domaine: string;
+  concept: string;
+  niveau: string;
+  frequence: number;
+  suggestions: string[];
+}
+
+export type PeriodeAnalyse = 'SEMAINE' | 'MOIS' | 'TRIMESTRE' | 'SEMESTRE' | 'ANNEE';
+
+export interface CoursuLaire {
+  id: string;
+  nom: string;
+  popularite: number;
+  tauxCompletion: number;
+}
+
+export interface CoursProblematique {
+  id: string;
+  nom: string;
+  problemes: string[];
+  suggestions: string[];
+}
+
+export type FrequenceConnexion = 'QUOTIDIENNE' | 'HEBDOMADAIRE' | 'IRREGULIERE' | 'RARE';
+
+export interface TauxAbandon {
+  global: number;
+  parModule: { [moduleId: string]: number };
+  parDifficulte: { [niveau: string]: number };
+}
+
+export interface QuestionEchouee {
+  questionId: string;
+  tauxEchec: number;
+  erreursFrequentes: string[];
+}
+
+export interface ExerciceProblematique {
+  exerciceId: string;
+  problemes: string[];
+  ameliorationsSuggeres: string[];
+}
+
+export interface FeedbackEtudiant {
+  id: string;
+  note: number;
+  commentaire: string;
+  suggestions: string[];
+  date: Date;
+}
+
+export interface PredictionReussite {
+  etudiantId: string;
+  probabiliteReussite: number;
+  facteursRisque: string[];
+  recommandations: string[];
+}
+
+// Types simulation
+export interface EntrepriseVirtuelle {
+  id: string;
+  nom: string;
+  secteur: string;
+  taille: string;
+  patrimoine: any;
+  parametres: any;
+}
+
+export interface ScenarioComptable {
+  id: string;
+  nom: string;
+  description: string;
+  contexte: string;
+  objectifs: string[];
+  dureeEstimee: number;
+}
+
+export interface OperationComptable {
+  id: string;
+  type: string;
+  description: string;
+  montant: number;
+  comptes: string[];
+  justification: string;
+}
+
+export interface DocumentSimulation {
+  id: string;
+  type: 'FACTURE' | 'BILAN' | 'COMPTE_RESULTAT' | 'JOURNAL' | 'BALANCE';
+  contenu: any;
+  dateGeneration: Date;
+}
+
+export interface CritereEvaluationSimulation {
+  id: string;
+  nom: string;
+  description: string;
+  poids: number;
+  methodeEvaluation: string;
+}
+
+export interface IndiceSimulation {
+  id: string;
+  titre: string;
+  contenu: string;
+  cout: number;
+  niveau: string;
+}
+
+// Types cas d'étude
+export interface DonneesCasEtude {
+  entreprise: any;
+  contexte: string;
+  documents: any[];
+  contraintes: string[];
+}
+
+export interface QuestionAnalyse {
+  id: string;
+  question: string;
+  type: 'ANALYSE' | 'CALCUL' | 'INTERPRETATION' | 'PROPOSITION';
+  pointsAttribues: number;
+}
+
+export interface LivrableAttendu {
+  id: string;
+  nom: string;
+  description: string;
+  format: string;
+  criteres: string[];
+}
+
+export interface DocumentCasEtude {
+  id: string;
+  nom: string;
+  type: string;
+  contenu: any;
+  confidentiel: boolean;
+}
+
+export interface GrilleEvaluation {
+  id: string;
+  criteres: CritereEvaluation[];
+  baremeTotal: number;
+  seuils: { [niveau: string]: number };
+}
+
+// =====================================================
+// TYPES E-LEARNING COMPLÉMENTAIRES 
+// =====================================================
+
+export interface ConfigurationCertificat {
+  disponible: boolean;
+  type: string;
+  validite: number; // en mois
+  prerequis: string[];
+}
+
+export interface Formateur {
+  id: string;
+  nom: string;
+  titre: string;
+  experience: string;
+  certifications: string[];
+}
+
+export interface ProgressionLecon {
+  leconId: string;
+  complete: boolean;
+  tempsConsomme: number;
+}
+
+export interface ProgressionExercice {
+  exerciceId: string;
+  reussi: boolean;
+  noteObtenue: number;
+  nombreTentatives: number;
+}
+
+export enum DomaineCompetence {
+  COMPTABILITE_GENERALE = 'COMPTABILITE_GENERALE',
+  FISCALITE = 'FISCALITE',
+  AUDIT = 'AUDIT',
+  ANALYSE_FINANCIERE = 'ANALYSE_FINANCIERE'
+}
+
+export enum TypeRecommandation {
+  REVISION = 'REVISION',
+  EXERCICE_SUPPLEMENTAIRE = 'EXERCICE_SUPPLEMENTAIRE',
+  COURS_COMPLEMENT = 'COURS_COMPLEMENT',
+  PAUSE_RECOMMANDEE = 'PAUSE_RECOMMANDEE'
+}
+
+export interface ActionRecommandee {
+  type: string;
+  description: string;
+  url?: string;
+}
+
+export enum TypeSimulation {
+  TENUE_COMPTABILITE = 'TENUE_COMPTABILITE',
+  CLOTURE_EXERCICE = 'CLOTURE_EXERCICE',
+  ANALYSE_ENTREPRISE = 'ANALYSE_ENTREPRISE',
+  AUDIT_COMPLET = 'AUDIT_COMPLET'
+}
 
 // ===================================
 // EXPORTS GROUPÉS POUR INDEX

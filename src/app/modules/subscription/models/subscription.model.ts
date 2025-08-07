@@ -3,6 +3,9 @@
 // Système complet avec Mobile Money pour l'Afrique
 // =====================================================
 
+// Import des types communs
+import { MethodePaiement, PaysOHADA } from '../../../shared/types';
+
 export interface Abonnement {
   id: string;
   userId: string;
@@ -176,9 +179,9 @@ export interface HistoriqueUtilisation {
   details?: any;
 }
 
-export interface MethodePaiement {
+export interface ConfigurationMethodePaiement {
   id: string;
-  type: TypePaiement;
+  type: MethodePaiement;
   nom: string;
   
   // Informations selon le type
@@ -327,16 +330,7 @@ export interface HistoriqueAbonnement {
 // ENUMERATIONS
 // =====================================================
 
-export enum TypePaiement {
-  CARTE_CREDIT = 'carte_credit',
-  CARTE_DEBIT = 'carte_debit',
-  VIREMENT_BANCAIRE = 'virement_bancaire',
-  PAYPAL = 'paypal',
-  MOBILE_MONEY = 'mobile_money',
-  CRYPTO = 'crypto',
-  CHEQUE = 'cheque',
-  ESPECES = 'especes'
-}
+// TypePaiement est maintenant MethodePaiement depuis les types communs
 
 export enum OperateurMobileMoney {
   // Afrique de l'Ouest (UEMOA)
@@ -431,7 +425,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 0,
         prixAnnuel: 0,
         ajustementLocal: 0,
-        methodesDisponibles: [TypePaiement.MOBILE_MONEY, TypePaiement.CARTE_CREDIT, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.MOBILE_MONEY, MethodePaiement.CARTE_CREDIT, MethodePaiement.VIREMENT_BANCAIRE]
       },
       {
         region: 'Europe',
@@ -440,7 +434,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 0,
         prixAnnuel: 0,
         ajustementLocal: 0,
-        methodesDisponibles: [TypePaiement.CARTE_CREDIT, TypePaiement.PAYPAL, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.CARTE_CREDIT, MethodePaiement.PAYPAL, MethodePaiement.VIREMENT_BANCAIRE]
       }
     ],
     fonctionnalites: [
@@ -496,7 +490,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 15000,
         prixAnnuel: 150000,
         ajustementLocal: -50,
-        methodesDisponibles: [TypePaiement.MOBILE_MONEY, TypePaiement.CARTE_CREDIT, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.MOBILE_MONEY, MethodePaiement.CARTE_CREDIT, MethodePaiement.VIREMENT_BANCAIRE]
       },
       {
         region: 'Europe',
@@ -505,7 +499,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 29,
         prixAnnuel: 290,
         ajustementLocal: 0,
-        methodesDisponibles: [TypePaiement.CARTE_CREDIT, TypePaiement.PAYPAL, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.CARTE_CREDIT, MethodePaiement.PAYPAL, MethodePaiement.VIREMENT_BANCAIRE]
       }
     ],
     fonctionnalites: [
@@ -562,7 +556,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 50000,
         prixAnnuel: 500000,
         ajustementLocal: -50,
-        methodesDisponibles: [TypePaiement.MOBILE_MONEY, TypePaiement.CARTE_CREDIT, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.MOBILE_MONEY, MethodePaiement.CARTE_CREDIT, MethodePaiement.VIREMENT_BANCAIRE]
       },
       {
         region: 'Europe',
@@ -571,7 +565,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 99,
         prixAnnuel: 990,
         ajustementLocal: 0,
-        methodesDisponibles: [TypePaiement.CARTE_CREDIT, TypePaiement.PAYPAL, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.CARTE_CREDIT, MethodePaiement.PAYPAL, MethodePaiement.VIREMENT_BANCAIRE]
       }
     ],
     fonctionnalites: [
@@ -628,7 +622,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 150000,
         prixAnnuel: 1500000,
         ajustementLocal: -50,
-        methodesDisponibles: [TypePaiement.MOBILE_MONEY, TypePaiement.CARTE_CREDIT, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.MOBILE_MONEY, MethodePaiement.CARTE_CREDIT, MethodePaiement.VIREMENT_BANCAIRE]
       },
       {
         region: 'Europe',
@@ -637,7 +631,7 @@ export const PLANS_ABONNEMENT: PlanAbonnement[] = [
         prixMensuel: 299,
         prixAnnuel: 2990,
         ajustementLocal: 0,
-        methodesDisponibles: [TypePaiement.CARTE_CREDIT, TypePaiement.PAYPAL, TypePaiement.VIREMENT_BANCAIRE]
+        methodesDisponibles: [MethodePaiement.CARTE_CREDIT, MethodePaiement.PAYPAL, MethodePaiement.VIREMENT_BANCAIRE]
       }
     ],
     fonctionnalites: [

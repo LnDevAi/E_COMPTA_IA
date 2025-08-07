@@ -3,6 +3,108 @@
 // Système complet de formation comptable avec certifications
 // =====================================================
 
+// Import des types communs
+import {
+  CategorieComptable,
+  NiveauDifficulte,
+  RythmeApprentissage,
+  PrioriteRecommandation,
+  RareteBadge,
+  Ressource,
+  Schema,
+  ExempleChiffre,
+  ExerciceInteractif,
+  QuizRapide,
+  PointVerification,
+  CalculatriceInteractive,
+  ExerciceCode,
+  SousTitre,
+  QualiteVideo,
+  ChapitreVideo,
+  MarqueurVideo,
+  QuestionEmbedded,
+  AnnotationVideo,
+  DifficulteExercice,
+  EtapeExercice,
+  SolutionType,
+  CritereEvaluation,
+  FeedbackExercice,
+  ErreurCourante,
+  TypeQuiz,
+  StatistiquesQuiz,
+  TableauComptable,
+  ReponseQuestion,
+  DifficulteQuestion,
+  SectionEvaluation,
+  BlockchainRecord,
+  FormatCertificat,
+  DifficulteIdentifiee,
+  PeriodeAnalyse,
+  CoursuLaire,
+  CoursProblematique,
+  FrequenceConnexion,
+  TauxAbandon,
+  QuestionEchouee,
+  ExerciceProblematique,
+  FeedbackEtudiant,
+  PredictionReussite,
+  EntrepriseVirtuelle,
+  ScenarioComptable,
+  OperationComptable,
+  DocumentSimulation,
+  CritereEvaluationSimulation,
+  IndiceSimulation,
+  DonneesCasEtude,
+  QuestionAnalyse,
+  LivrableAttendu,
+  DocumentCasEtude,
+  GrilleEvaluation,
+  ConfigurationCertificat,
+  Formateur,
+  ProgressionLecon,
+  ProgressionExercice,
+  DomaineCompetence,
+  TypeRecommandation,
+  ActionRecommandee,
+  TypeSimulation
+} from '../../../shared/types';
+
+// =====================================================
+// ENUMS - Déclarés en premier pour éviter les erreurs
+// =====================================================
+
+export enum NiveauCompetence {
+  FONDAMENTAL = 'FONDAMENTAL',
+  OPERATIONNEL = 'OPERATIONNEL',
+  AVANCE = 'AVANCE',
+  EXPERT = 'EXPERT'
+}
+
+export enum TypeCertification {
+  COURS_COMPLET = 'COURS_COMPLET',
+  MODULE = 'MODULE',
+  SPECIALISATION = 'SPECIALISATION',
+  CERTIFICATION_COMPLETE = 'CERTIFICATION_COMPLETE'
+}
+
+export enum StatutCours {
+  BROUILLON = 'BROUILLON',
+  EN_REVISION = 'EN_REVISION',
+  PUBLIE = 'PUBLIE',
+  ARCHIVE = 'ARCHIVE'
+}
+
+export enum NiveauCours {
+  DEBUTANT = 'DEBUTANT',
+  INTERMEDIAIRE = 'INTERMEDIAIRE',
+  AVANCE = 'AVANCE',
+  EXPERT = 'EXPERT'
+}
+
+// =====================================================
+// INTERFACES PRINCIPALES
+// =====================================================
+
 export interface CoursComptabilite {
   id: string;
   titre: string;
@@ -403,28 +505,8 @@ export interface AnalyticsApprentissage {
 }
 
 // =====================================================
-// ENUMERATIONS
+// ENUMS SPÉCIFIQUES AU MODULE E-LEARNING
 // =====================================================
-
-export enum NiveauCours {
-  DEBUTANT = 'debutant',
-  INTERMEDIAIRE = 'intermediaire',
-  AVANCE = 'avance',
-  EXPERT = 'expert'
-}
-
-export enum CategorieComptable {
-  COMPTABILITE_GENERALE = 'comptabilite_generale',
-  COMPTABILITE_ANALYTIQUE = 'comptabilite_analytique',
-  FISCALITE = 'fiscalite',
-  AUDIT = 'audit',
-  CONTROLE_GESTION = 'controle_gestion',
-  ANALYSE_FINANCIERE = 'analyse_financiere',
-  SYSCOHADA = 'syscohada',
-  IFRS = 'ifrs',
-  NORMES_LOCALES = 'normes_locales',
-  LOGICIELS_COMPTABLES = 'logiciels_comptables'
-}
 
 export enum NiveauAccesElearning {
   GRATUIT = 'gratuit',
@@ -493,13 +575,6 @@ export enum StatutProgression {
   SUSPENDU = 'suspendu',
   ABANDONNE = 'abandonne',
   CERTIFIE = 'certifie'
-}
-
-export enum RythmeApprentissage {
-  INTENSIF = 'intensif',        // 2h+/jour
-  REGULIER = 'regulier',        // 1h/jour
-  FLEXIBLE = 'flexible',        // À son rythme
-  WEEKEND = 'weekend'           // Weekends uniquement
 }
 
 // =====================================================
@@ -747,108 +822,8 @@ export function genererNumeroCertificat(): string {
 }
 
 export function determinerMention(pourcentage: number): MentionCertificat {
-  if (pourcentage >= 90) return MentionCertificat.EXCELLENT;
   if (pourcentage >= 80) return MentionCertificat.TRES_BIEN;
   if (pourcentage >= 70) return MentionCertificat.BIEN;
   if (pourcentage >= 60) return MentionCertificat.ASSEZ_BIEN;
   return MentionCertificat.PASSABLE;
-}
-
-// Enums et interfaces supplémentaires pour la complétude
-export enum NiveauCompetence {
-  FONDAMENTAL = 'fondamental',
-  INTERMEDIAIRE = 'intermediaire',
-  AVANCE = 'avance',
-  EXPERT = 'expert'
-}
-
-export enum DomaineCompetence {
-  COMPTABILITE_GENERALE = 'comptabilite_generale',
-  FISCALITE = 'fiscalite',
-  AUDIT = 'audit',
-  ANALYSE_FINANCIERE = 'analyse_financiere'
-}
-
-export enum RareteBadge {
-  COMMUN = 'commun',
-  RARE = 'rare',
-  EPIQUE = 'epique',
-  LEGENDAIRE = 'legendaire'
-}
-
-export enum TypeRecommandation {
-  REVISION = 'revision',
-  EXERCICE_SUPPLEMENTAIRE = 'exercice_supplementaire',
-  COURS_COMPLEMENT = 'cours_complement',
-  PAUSE_RECOMMANDEE = 'pause_recommandee'
-}
-
-export enum PrioriteRecommandation {
-  BASSE = 'basse',
-  MOYENNE = 'moyenne',
-  HAUTE = 'haute',
-  CRITIQUE = 'critique'
-}
-
-export enum TypeSimulation {
-  TENUE_COMPTABILITE = 'tenue_comptabilite',
-  CLOTURE_EXERCICE = 'cloture_exercice',
-  ANALYSE_ENTREPRISE = 'analyse_entreprise',
-  AUDIT_COMPLET = 'audit_complet'
-}
-
-export enum TypeCertification {
-  COURS_COMPLET = 'cours_complet',
-  MODULE_SPECIALISE = 'module_specialise',
-  PARCOURS_METIER = 'parcours_metier',
-  SPECIALISATION = 'specialisation'
-}
-
-export enum StatutCours {
-  BROUILLON = 'brouillon',
-  EN_REVISION = 'en_revision',
-  PUBLIE = 'publie',
-  ARCHIVE = 'archive'
-}
-
-// Interfaces pour les composants complexes (à développer selon les besoins)
-export interface Formateur {
-  id: string;
-  nom: string;
-  titre: string;
-  experience: string;
-  certifications: string[];
-}
-
-export interface ConfigurationCertificat {
-  disponible: boolean;
-  type: TypeCertification;
-  validite: number; // en mois
-  prerequis: string[];
-}
-
-export interface Document {
-  id: string;
-  nom: string;
-  type: string;
-  url: string;
-}
-
-export interface ProgressionLecon {
-  leconId: string;
-  complete: boolean;
-  tempsConsomme: number;
-}
-
-export interface ProgressionExercice {
-  exerciceId: string;
-  reussi: boolean;
-  noteObtenue: number;
-  nombreTentatives: number;
-}
-
-export interface ActionRecommandee {
-  type: string;
-  description: string;
-  url?: string;
 }

@@ -1,0 +1,2 @@
+# Ce fichier assure que le répertoire test-results existe
+# Il sera utilisé par Jest pour stocker les rapports de tests

@@ -1,3 +1,15 @@
+// Import des types communs
+import {
+  StyleLegende,
+  StyleSerie,
+  PositionAnnotation,
+  StyleAnnotation,
+  DimensionsExport,
+  StyleMenu,
+  StyleBreadcrumb,
+  StylePagination
+} from '../../../shared/types';
+
 export interface Rapport {
   id?: string;
   nom: string;

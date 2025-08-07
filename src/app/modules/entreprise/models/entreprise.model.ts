@@ -1047,8 +1047,8 @@ export function getStatistiquesMondialesComptabilite() {
     totalPays: PAYS_MONDIAUX.length,
     paysOHADA: getPaysBySystemeComptable('SYSCOHADA').length,
     paysIFRS: getPaysBySystemeComptable('IFRS').length,
-    systemesComptables: [...new Set(PAYS_MONDIAUX.map(p => p.systemeComptable.nom))].length,
-    continents: [...new Set(PAYS_MONDIAUX.map(p => p.continent))].length,
-    devises: [...new Set(PAYS_MONDIAUX.map(p => p.devise))].length
+    systemesComptables: Array.from(new Set(PAYS_MONDIAUX.map(p => p.systemeComptable.nom))).length,
+    continents: Array.from(new Set(PAYS_MONDIAUX.map(p => p.continent))).length,
+    devises: Array.from(new Set(PAYS_MONDIAUX.map(p => p.devise))).length
   };
 }

@@ -841,7 +841,7 @@ export const JOURNAUX_SYSCOHADA_DEFAUT: Partial<Journal>[] = [
     },
     icone: 'groups',
     conformiteSYSCOHADA: true,
-    categorieAUDCIF: CategorieAUDCIF.CHARGES_PERSONNEL
+    categorieAUDCIF: CategorieAUDCIF.CHARGES_EXPLOITATION
   }
 ];
 

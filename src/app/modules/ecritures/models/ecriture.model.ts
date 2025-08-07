@@ -1,3 +1,12 @@
+// Import des types communs
+import {
+  ControleLigne,
+  ErreurLigne,
+  AvertissementLigne,
+  FormatageJournal,
+  ControleJournal
+} from '../../../shared/types';
+
 export interface EcritureComptable {
   id?: string;
   

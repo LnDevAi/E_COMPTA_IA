@@ -975,6 +975,49 @@ export enum TypeSimulation {
   AUDIT_COMPLET = 'AUDIT_COMPLET'
 }
 
+// =====================================================
+// TYPES ÉCRITURES COMPTABLES
+// =====================================================
+
+export interface ControleLigne {
+  id: string;
+  type: string;
+  regle: string;
+  statut: 'VALIDE' | 'INVALIDE' | 'WARNING';
+  message: string;
+}
+
+export interface ErreurLigne {
+  id: string;
+  code: string;
+  message: string;
+  gravite: 'ERREUR' | 'WARNING' | 'INFO';
+  suggestions?: string[];
+}
+
+export interface AvertissementLigne {
+  id: string;
+  type: string;
+  message: string;
+  niveau: 'FAIBLE' | 'MOYEN' | 'ELEVE';
+}
+
+export interface FormatageJournal {
+  id: string;
+  nom: string;
+  format: 'PDF' | 'EXCEL' | 'CSV' | 'JSON';
+  template: string;
+  parametres: any;
+}
+
+export interface ControleJournal {
+  id: string;
+  nom: string;
+  description: string;
+  actif: boolean;
+  regle: string;
+}
+
 // ===================================
 // EXPORTS GROUPÉS POUR INDEX
 // ===================================

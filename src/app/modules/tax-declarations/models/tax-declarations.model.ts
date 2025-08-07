@@ -3,6 +3,63 @@
 // Système complet OHADA - TVA, IS, Charges sociales
 // =====================================================
 
+// Import des types communs
+import {
+  IdentiteEntreprise,
+  PaysOHADA,
+  RegimeFiscal,
+  SpecificitesFiscales,
+  TauxFiscaux,
+  FormulaireDeclaration,
+  AnnexeDeclaration,
+  PieceJustificative,
+  DonneesComptablesSource,
+  AjustementExtraComptable,
+  CalculsFiscaux,
+  BaseImposable,
+  ImpotCalcule,
+  CreditImpot,
+  ControleFiscal,
+  AnomalieFiscale,
+  InformationsTransmission,
+  InformationsPaiement,
+  EcheancierFiscal,
+  VersionDeclaration,
+  SuggestionFiscaleIA,
+  AlerteReglementaire,
+  PeriodeTVA,
+  ControleTVA,
+  ExerciceFiscal,
+  AcompteIS,
+  Tableau2058A,
+  Tableau2058B,
+  Tableau2058C,
+  TableauFiscalGenerique,
+  InformationFiliale,
+  OperationIntragroupe,
+  ControleIS,
+  AlerteOptimisationIS,
+  EcheanceCotisation,
+  RetardPaiement,
+  PenaliteRetard,
+  ControleChargesSociales,
+  VerificationCoherence,
+  VerificationCompletude,
+  SuggestionOptimisation,
+  ParametrePreRemplissage,
+  Risque,
+  IndicateurPerformance,
+  PointControle,
+  ImpactReglementaire,
+  TypePeriode,
+  TypeOrganismeSecurite,
+  CoordonneesOrganisme,
+  TypeCotisation,
+  ModalitePaiement,
+  ExonerationCotisation,
+  StatutAction
+} from '../../../shared/types';
+
 export interface DeclarationFiscale {
   id: string;
   type: TypeDeclaration;
@@ -674,7 +731,7 @@ export function detecterOptimisationsFiscales(
       parametresFiscaux.amortissements
     );
     
-    if (optimisationAmortissement.economieEstimee > 0) {
+    if (optimisationAmortissement.impactFinancier.economieEstimee > 0) {
       optimisations.push(optimisationAmortissement);
     }
   }
@@ -686,7 +743,7 @@ export function detecterOptimisationsFiscales(
       parametresFiscaux.provisions
     );
     
-    if (optimisationProvisions.economieEstimee > 0) {
+    if (optimisationProvisions.impactFinancier.economieEstimee > 0) {
       optimisations.push(optimisationProvisions);
     }
   }

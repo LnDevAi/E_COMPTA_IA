@@ -8,6 +8,6 @@ frontend:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: dist
+    baseDirectory: dist/e-compta-ia
     files:
       - '**/*'

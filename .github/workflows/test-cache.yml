@@ -3,7 +3,7 @@ name: 🧪 Test Cache GitHub Actions
 on:
   workflow_dispatch:  # Permet de déclencher manuellement
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, 'cursor/**' ]
 
 env:
   NODE_VERSION: '18'

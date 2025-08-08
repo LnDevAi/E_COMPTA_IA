@@ -3,6 +3,9 @@ name: 🔍 Pull Request Simple
 on:
   pull_request:
     branches: [ main, develop ]
+  push:
+    branches: [ 'cursor/**' ]
+  workflow_dispatch:  # Permet déclenchement manuel
 
 jobs:
   # Job ultra-simple pour PR

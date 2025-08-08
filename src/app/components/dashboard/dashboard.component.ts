@@ -86,7 +86,7 @@ import { CommonModule } from '@angular/common';
             <span class="step-number">1</span>
             <div class="step-content">
               <h4>Installer Amplify CLI</h4>
-              <code>npm install -g @aws-amplify/cli</code>
+                             <code>npm install -g &#64;aws-amplify/cli</code>
             </div>
           </div>
 

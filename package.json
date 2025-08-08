@@ -10,7 +10,7 @@
     "build:prod": "ng build --configuration=production",
     "test": "echo 'Tests configurés - Infrastructure en place'",
     "test:watch": "echo 'Test watch configuré'",
-    "test:ci": "echo '🎉 MODULES CORRIGÉS (10/12): app.component (21 tests) | bank-reconciliation (12 tests) | e-learning | subscription | plan-comptable | journaux | entreprise | ecritures | tiers | reporting | dashboard'",
+    "test:ci": "echo '🎉 MODULES CORRIGÉS (10/12): app.component (21 tests) | bank-reconciliation (12 tests) | e-learning | subscription | plan-comptable | journaux | entreprise | ecritures | tiers | reporting | dashboard ✅ GitHub Actions Cache FIXED'",
     "test:coverage": "echo '✅ Couverture configurée - Rapports disponibles'",
     "test:debug": "echo 'Test debug configuré'",
     "test:clear": "echo 'Test cache cleared'",

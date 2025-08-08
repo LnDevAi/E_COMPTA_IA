@@ -50,20 +50,16 @@ frontend:
         - echo "🏗️ Build de l'application Angular..."
         
         # Build optimisé pour production
-        - npm run build:prod
+        - npm run build
         
         # Vérifications post-build
         - echo "✅ Build terminé"
         - ls -la dist/
-        
-        # Optimisations supplémentaires
-        - echo "⚡ Optimisations post-build..."
-        - find dist/ -name "*.js" -exec gzip -k {} \;
-        - find dist/ -name "*.css" -exec gzip -k {} \;
+        - ls -la dist/e-compta-ia/ || echo "Vérification structure dist"
         
   artifacts:
-    # Répertoire de sortie après build
-    baseDirectory: dist
+    # Répertoire de sortie après build Angular
+    baseDirectory: dist/e-compta-ia
     files:
       - '**/*'
       

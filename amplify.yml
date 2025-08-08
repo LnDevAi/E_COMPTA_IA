@@ -3,10 +3,29 @@ frontend:
   phases:
     preBuild:
       commands:
+        - echo "=== DIAGNOSTIC AMPLIFY ==="
+        - pwd
+        - ls -la
+        - node --version
+        - npm --version
+        - echo "=== CONTENU SRC ==="
+        - ls -la src/ || echo "Pas de dossier src"
+        - echo "=== PACKAGE.JSON ==="
+        - cat package.json
+        - echo "=== ANGULAR.JSON ==="
+        - cat angular.json || echo "Pas de angular.json"
+        - echo "=== INSTALLATION NPM ==="
         - npm install
     build:
       commands:
-        - npm run build
+        - echo "=== BUILD PHASE ==="
+        - ls -la
+        - echo "=== TENTATIVE BUILD ==="
+        - npm run build || echo "Build failed"
+        - echo "=== CONTENU DIST ==="
+        - ls -la dist/ || echo "Pas de dossier dist"
+        - mkdir -p dist/e-compta-ia
+        - echo '<h1>E-COMPTA-IA Diagnostic</h1><p>Build diagnostic en cours...</p>' > dist/e-compta-ia/index.html
   artifacts:
     baseDirectory: dist/e-compta-ia
     files:

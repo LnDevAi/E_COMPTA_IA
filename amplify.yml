@@ -3,15 +3,11 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "📦 Installation des dépendances..."
-        - npm install --legacy-peer-deps
+        - npm install
     build:
       commands:
-        - echo "🏗️ Build de l'application..."
         - npm run build
-        - echo "✅ Build terminé"
-        - ls -la dist/
   artifacts:
-    baseDirectory: dist/e-compta-ia
+    baseDirectory: dist
     files:
       - '**/*'

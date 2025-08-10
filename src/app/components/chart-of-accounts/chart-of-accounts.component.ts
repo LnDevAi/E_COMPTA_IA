@@ -14,6 +14,7 @@ import { Observable } from 'rxjs';
       <div class="header-row">
         <h1>🧾 Plan Comptable</h1>
         <div class="actions">
+          <label class="chk"><input type="checkbox" [(ngModel)]="showTree"/> Affichage arborescent</label>
           <input [(ngModel)]="query" (ngModelChange)="applyFilters()" class="search" type="text" placeholder="Rechercher (code, intitulé)..." />
           <select [(ngModel)]="selectedClass" (change)="applyFilters()" class="select">
             <option value="">Toutes les classes</option>
@@ -23,6 +24,15 @@ import { Observable } from 'rxjs';
           <button class="btn" (click)="exportCsv()">⬇️ CSV</button>
           <button class="btn" (click)="exportExcel()">⬇️ Excel</button>
           <button class="btn" (click)="exportPdf()">⬇️ PDF</button>
+          <!-- Boutons serveur (peuvent être retirés en version finale) -->
+          <button class="btn" title="Charger depuis le serveur" (click)="loadFromServer()">☁️ Charger</button>
+          <button class="btn" title="Sauvegarder vers le serveur" (click)="saveToServer()">☁️ Sauvegarder</button>
+          <div class="importer">
+            <a class="btn" [href]="coa.exportCsvFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ CSV</a>
+            <a class="btn" [href]="coa.exportXlsxFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ Excel</a>
+            <a class="btn" [href]="coa.exportPdfFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ PDF</a>
+            <input type="file" (change)="onImportServer($event)" accept=".json,.csv,.xlsx" />
+          </div>
         </div>
       </div>
 
@@ -49,6 +59,26 @@ import { Observable } from 'rxjs';
         <div *ngIf="addSuccess" class="ok">{{ addSuccess }}</div>
       </div>
 
+      <div *ngIf="showTree; else tableViews">
+        <h3>Arborescence</h3>
+        <ng-template #renderNodes let-list>
+          <ul>
+            <li *ngFor="let n of list">
+              <span class="toggle-icon" (click)="toggleExpand(n)" *ngIf="n.children.length">{{ n.expanded ? '▼' : '▶' }}</span>
+              <span class="code">{{ n.code }}</span>
+              <input class="inline" [(ngModel)]="n.intitule" [disabled]="n.locked"/>
+              <button class="btn small" (click)="saveNode(n)" [disabled]="n.locked">💾</button>
+              <button class="btn small danger" (click)="confirmDeleteNode(n)" [disabled]="n.locked">🗑️</button>
+              <div *ngIf="n.expanded && n.children.length" class="children">
+                <ng-template [ngTemplateOutlet]="renderNodes" [ngTemplateOutletContext]="{ $implicit: n.children }"></ng-template>
+              </div>
+            </li>
+          </ul>
+        </ng-template>
+        <ng-template [ngTemplateOutlet]="renderNodes" [ngTemplateOutletContext]="{ $implicit: roots }"></ng-template>
+      </div>
+
+      <ng-template #tableViews>
       <div *ngIf="groupByClass; else flatTable">
         <div *ngFor="let group of groupedKeys()" class="group-block">
           <div class="group-title" (click)="toggleGroup(group)">
@@ -74,7 +104,7 @@ import { Observable } from 'rxjs';
           </div>
         </div>
       </div>
-
+      </ng-template>
       <ng-template #flatTable>
         <table class="plan-table">
           <thead>
@@ -125,6 +155,11 @@ import { Observable } from 'rxjs';
     .add-subaccount .input { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; }
     .err { color:#e53e3e; font-size:0.9rem; }
     .ok { color:#38a169; font-size:0.9rem; }
+    .toggle-icon { cursor:pointer; margin-right:6px; }
+    .inline { padding:4px 6px; border:1px solid #e2e8f0; border-radius:4px; margin: 0 6px; }
+    .btn.small { padding: 4px 6px; font-size: 0.85rem; }
+    .btn.small.danger { background:#e53e3e; }
+    .children { margin-left: 1rem; }
   `]
 })
 export class ChartOfAccountsComponent implements OnInit {
@@ -161,7 +196,7 @@ export class ChartOfAccountsComponent implements OnInit {
   roots: TreeNode[] = [];
   lockedCodes = new Set<string>();
 
-  constructor(private coa: ChartOfAccountsService) {}
+  constructor(public coa: ChartOfAccountsService) {}
 
   ngOnInit(): void {
     this.plan$.subscribe(items => {
@@ -456,6 +491,44 @@ export class ChartOfAccountsComponent implements OnInit {
     this.allItems = this.allItems.filter(i => !toDelete.has(i.code));
     this.applyFilters();
     this.rebuildTree();
+  }
+
+  confirmDeleteNode(node: TreeNode): void {
+    if (node.locked) return;
+    if (confirm(`Supprimer ${node.code} (${node.intitule}) et ses sous-comptes ?`)) {
+      this.deleteNode(node);
+    }
+  }
+
+  // Server buttons
+  loadFromServer(): void {
+    this.coa.loadFromBackend().subscribe(items => {
+      const normalized = items.map(i => ({
+        ...i,
+        classe: this.normalizeClass(this.classFromCode(i.code))
+      }));
+      this.allItems = this.sortItems(normalized);
+      this.lockedCodes = new Set(this.allItems.filter(i=>i.locked).map(i=>i.code));
+      this.applyFilters();
+      this.rebuildTree();
+    });
+  }
+  saveToServer(): void {
+    this.coa.saveToBackend(this.allItems).subscribe(_ => {});
+  }
+  onImportServer(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.coa.importToBackend(file).subscribe(res => {
+      if (res.accepted?.length) {
+        this.allItems = this.sortItems([...this.allItems, ...res.accepted]);
+        this.applyFilters();
+        this.rebuildTree();
+      }
+      this.importErrors = res.errors || [];
+      input.value = '';
+    });
   }
 }
 

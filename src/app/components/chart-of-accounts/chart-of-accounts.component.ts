@@ -155,16 +155,25 @@ export class ChartOfAccountsComponent implements OnInit {
   addError = '';
   addSuccess = '';
 
+  // Tree view
+  showTree = false;
+  nodes: Record<string, TreeNode> = {};
+  roots: TreeNode[] = [];
+  lockedCodes = new Set<string>();
+
   constructor(private coa: ChartOfAccountsService) {}
 
   ngOnInit(): void {
     this.plan$.subscribe(items => {
+      // Calculer classe depuis le code pour garantir cohérence
       this.allItems = items.map(i => ({
         ...i,
-        classe: this.normalizeClass(i.classe)
+        classe: this.normalizeClass(this.classFromCode(i.code))
       }));
+      this.lockedCodes = new Set(this.allItems.map(i => i.code));
       this.classOptions = Array.from(new Set(this.allItems.map(i => i.classe))).sort();
       this.applyFilters();
+      this.rebuildTree();
     });
   }
 
@@ -172,6 +181,10 @@ export class ChartOfAccountsComponent implements OnInit {
     if (!c) return 'Classe ?';
     const m = (c + '').match(/(\d)/);
     return m ? `Classe ${m[1]}` : c;
+  }
+
+  classFromCode(code: string): string {
+    return 'Classe ' + (code?.charAt(0) || '?');
   }
 
   applyFilters(): void {
@@ -197,12 +210,17 @@ export class ChartOfAccountsComponent implements OnInit {
 
   sortItems(items: AccountPlanItem[]): AccountPlanItem[] {
     const dir = this.sortDir === 'asc' ? 1 : -1;
+    if (this.sortKey === 'code') {
+      return [...items].sort((a,b) => this.compareCode(a.code, b.code) * dir);
+    }
     const key = this.sortKey;
-    return [...items].sort((a, b) => {
-      const va = (a as any)[key] ?? '';
-      const vb = (b as any)[key] ?? '';
-      return (''+va).localeCompare(''+vb, 'fr', { numeric: true }) * dir;
-    });
+    return [...items].sort((a, b) => (''+((a as any)[key] ?? '')).localeCompare(''+((b as any)[key] ?? ''), 'fr', { numeric: true }) * dir);
+  }
+
+  compareCode(a: string, b: string): number {
+    // Compare par longueur puis lexicographique pour respecter l’ordre du plan
+    if (a.length !== b.length) return a.length - b.length;
+    return a.localeCompare(b, 'fr', { numeric: true });
   }
 
   sortBy(key: 'code' | 'intitule' | 'classe'): void {
@@ -356,9 +374,12 @@ export class ChartOfAccountsComponent implements OnInit {
 
   applyImport(): void {
     if (!this.importPreview.length) return;
-    this.allItems = this.sortItems([...this.allItems, ...this.importPreview]);
+    // Marquer comme non verrouillés (ajoutés)
+    const toAdd = this.importPreview.map(i => ({ ...i }));
+    this.allItems = this.sortItems([...this.allItems, ...toAdd]);
     this.importPreview = [];
     this.applyFilters();
+    this.rebuildTree();
   }
 
   // Add sub-account
@@ -375,10 +396,75 @@ export class ChartOfAccountsComponent implements OnInit {
     if (this.allItems.some(i => i.code === code)) { this.addError = 'Ce code existe déjà'; return; }
     // classe du nouveau = classe du parent
     const parentItem = this.allItems.find(i => i.code === parent);
-    const classe = parentItem ? parentItem.classe : this.normalizeClass('Classe ' + code.charAt(0));
+    const classe = parentItem ? parentItem.classe : this.normalizeClass(this.classFromCode(code));
     this.allItems = this.sortItems([...this.allItems, { code, intitule: label, classe }]);
     this.parentCode = this.newCode = this.newLabel = '';
     this.addSuccess = 'Sous-compte ajouté';
     this.applyFilters();
+    this.rebuildTree();
   }
+
+  // Tree helpers
+  rebuildTree(): void {
+    this.nodes = {};
+    this.roots = [];
+    for (const i of this.allItems) {
+      this.nodes[i.code] = {
+        code: i.code,
+        intitule: i.intitule,
+        classe: i.classe!,
+        children: [],
+        expanded: false,
+        locked: this.lockedCodes.has(i.code),
+        description: (i as any).description || ''
+      };
+    }
+    for (const code of Object.keys(this.nodes)) {
+      const parent = this.findParentCode(code);
+      if (parent && this.nodes[parent]) {
+        this.nodes[parent].children.push(this.nodes[code]);
+      } else {
+        this.roots.push(this.nodes[code]);
+      }
+    }
+    // Trier chaque niveau par code
+    const sortRec = (n: TreeNode[]) => { n.sort((a,b)=>this.compareCode(a.code,b.code)); n.forEach(ch=>sortRec(ch.children)); };
+    sortRec(this.roots);
+  }
+
+  findParentCode(code: string): string | null {
+    for (let l = code.length - 1; l >= 1; l--) {
+      const p = code.substring(0, l);
+      if (this.nodes[p]) return p;
+    }
+    return null;
+  }
+
+  // Node actions (edit/delete for user-added only)
+  canEdit(node: TreeNode): boolean { return !node.locked; }
+  toggleExpand(node: TreeNode): void { node.expanded = !node.expanded; }
+  saveNode(node: TreeNode): void {
+    if (node.locked) return;
+    const item = this.allItems.find(i => i.code === node.code);
+    if (item) { (item as any).intitule = node.intitule; (item as any).description = node.description; this.applyFilters(); }
+  }
+  deleteNode(node: TreeNode): void {
+    if (node.locked) return;
+    const toDelete = new Set<string>();
+    const collect = (n: TreeNode)=>{ toDelete.add(n.code); n.children.forEach(collect); };
+    collect(node);
+    this.allItems = this.allItems.filter(i => !toDelete.has(i.code));
+    this.applyFilters();
+    this.rebuildTree();
+  }
+}
+
+interface TreeNode {
+  code: string;
+  intitule: string;
+  classe: string;
+  description?: string;
+  expanded: boolean;
+  locked: boolean;
+  children: TreeNode[];
 }

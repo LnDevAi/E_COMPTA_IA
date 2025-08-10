@@ -3,6 +3,7 @@ import { AppComponent } from './app/app.component';
 import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from '@angular/router';
+import { HttpClientModule } from '@angular/common/http';
 
 // Configuration Amplify (sera ajoutée plus tard)
 // import { Amplify } from 'aws-amplify';
@@ -12,14 +13,18 @@ import { RouterModule } from '@angular/router';
 bootstrapApplication(AppComponent, {
   providers: [
     importProvidersFrom(
-      BrowserAnimationsModule,
-             RouterModule.forRoot([
+                    BrowserAnimationsModule,
+              HttpClientModule,
+                    RouterModule.forRoot([
         { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
         { path: 'dashboard', loadComponent: () => import('./app/components/dashboard/dashboard.component').then(m => m.DashboardComponent) },
         { path: 'bank-reconciliation', loadComponent: () => import('./app/components/bank-reconciliation/bank-reconciliation.component').then(m => m.BankReconciliationComponent) },
         { path: 'financial-statements', loadComponent: () => import('./app/components/financial-statements/financial-statements.component').then(m => m.FinancialStatementsComponent) },
         { path: 'tax-declarations', loadComponent: () => import('./app/components/tax-declarations/tax-declarations.component').then(m => m.TaxDeclarationsComponent) },
         { path: 'enterprise', loadComponent: () => import('./app/components/enterprise/enterprise.component').then(m => m.EnterpriseComponent) },
+        { path: 'journals', loadComponent: () => import('./app/components/journals/journals.component').then(m => m.JournalsComponent) },
+        { path: 'ledgers', loadComponent: () => import('./app/components/ledgers/ledgers.component').then(m => m.LedgersComponent) },
+        { path: 'chart-of-accounts', loadComponent: () => import('./app/components/chart-of-accounts/chart-of-accounts.component').then(m => m.ChartOfAccountsComponent) },
         { path: '**', redirectTo: '/dashboard' }
       ])
     )

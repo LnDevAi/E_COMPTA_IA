@@ -1,0 +1,946 @@
+<!-- HEADER PLATEFORME E-LEARNING -->
+<div class="learning-platform">
+  <div class="platform-header">
+    <div class="container">
+      <div class="header-content">
+        <div class="platform-title">
+          <h1>
+            <i class="fas fa-graduation-cap"></i>
+            E-Learning SYSCOHADA
+          </h1>
+          <p class="subtitle">
+            Votre parcours d'excellence en comptabilité OHADA
+          </p>
+        </div>
+        
+        <div class="user-level">
+          <div class="level-badge" [ngClass]="'level-' + niveauAbonnement">
+            {{ niveauAbonnement | titlecase }}
+          </div>
+          
+          <div class="stats-quick" *ngIf="statistiquesEtudiant">
+            <div class="stat-item">
+              <span class="stat-number">{{ statistiquesEtudiant.nombreCoursInscrits }}</span>
+              <span class="stat-label">Cours</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">{{ statistiquesEtudiant.nombreCertificats }}</span>
+              <span class="stat-label">Certificats</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">{{ statistiquesEtudiant.pointsExperienceTotal }}</span>
+              <span class="stat-label">XP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS -->
+  <div class="platform-nav">
+    <div class="container">
+      <nav class="nav-tabs">
+        <button 
+          class="nav-tab"
+          [class.active]="vueActive === 'dashboard'"
+          (click)="changerVue('dashboard')">
+          <i class="fas fa-chart-line"></i>
+          Dashboard
+        </button>
+        
+        <button 
+          class="nav-tab"
+          [class.active]="vueActive === 'catalogue'"
+          (click)="changerVue('catalogue')">
+          <i class="fas fa-book-open"></i>
+          Catalogue
+          <span class="tab-badge">{{ coursDisponibles.length }}</span>
+        </button>
+        
+        <button 
+          class="nav-tab"
+          [class.active]="vueActive === 'mes-cours'"
+          (click)="changerVue('mes-cours')">
+          <i class="fas fa-user-graduate"></i>
+          Mes Cours
+          <span class="tab-badge" *ngIf="mesProgressions.length > 0">{{ mesProgressions.length }}</span>
+        </button>
+        
+        <button 
+          class="nav-tab"
+          [class.active]="vueActive === 'certificats'"
+          (click)="changerVue('certificats')">
+          <i class="fas fa-certificate"></i>
+          Certificats
+          <span class="tab-badge" *ngIf="mesCertificats.length > 0">{{ mesCertificats.length }}</span>
+        </button>
+        
+        <button 
+          class="nav-tab"
+          [class.active]="vueActive === 'statistiques'"
+          (click)="changerVue('statistiques')">
+          <i class="fas fa-analytics"></i>
+          Analytics
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- CONTENU PRINCIPAL -->
+  <div class="platform-content">
+    <div class="container">
+      
+      <!-- LOADER GLOBAL -->
+      <div class="loading-overlay" *ngIf="chargementEnCours">
+        <div class="loading-spinner">
+          <i class="fas fa-graduation-cap fa-spin"></i>
+          <p>Chargement de votre espace d'apprentissage...</p>
+        </div>
+      </div>
+
+      <!-- ALERTE ERREUR -->
+      <div class="alert alert-error" *ngIf="erreur">
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ erreur }}
+        <button class="btn-close" (click)="erreur = null">×</button>
+      </div>
+
+      <!-- VUE DASHBOARD -->
+      <div class="vue-dashboard" *ngIf="vueActive === 'dashboard'">
+        <div class="dashboard-grid">
+          
+          <!-- Statistiques personnelles -->
+          <div class="dashboard-card stats-card" *ngIf="statistiquesEtudiant">
+            <h3>
+              <i class="fas fa-chart-pie"></i>
+              Mes Statistiques
+            </h3>
+            
+            <div class="stats-grid">
+              <div class="stat-box">
+                <div class="stat-value">{{ statistiquesEtudiant.pourcentageCompletionMoyen | number:'1.1-1' }}%</div>
+                <div class="stat-label">Progression moyenne</div>
+              </div>
+              
+              <div class="stat-box">
+                <div class="stat-value">{{ formaterDuree(statistiquesEtudiant.tempsApprentissageTotal) }}</div>
+                <div class="stat-label">Temps d'apprentissage</div>
+              </div>
+              
+              <div class="stat-box">
+                <div class="stat-value">{{ statistiquesEtudiant.noteMoyenne | number:'1.1-1' }}/20</div>
+                <div class="stat-label">Note moyenne</div>
+              </div>
+              
+              <div class="stat-box">
+                <div class="stat-value">{{ statistiquesEtudiant.streakMaximum }}</div>
+                <div class="stat-label">Streak max (jours)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cours en cours -->
+          <div class="dashboard-card">
+            <h3>
+              <i class="fas fa-play-circle"></i>
+              Continuer l'apprentissage
+            </h3>
+            
+            <div class="courses-progress" *ngIf="mesProgressions.length > 0; else noProgressions">
+              <div 
+                class="course-progress-item"
+                *ngFor="let progression of mesProgressions | slice:0:3"
+                (click)="reprendreCours(progression.coursId)">
+                
+                <div class="course-info">
+                  <h4>{{ getCoursTitre(progression.coursId) }}</h4>
+                  <div class="progress-bar">
+                    <div 
+                      class="progress-fill"
+                      [style.width.%]="progression.pourcentageCompletion"
+                      [style.background-color]="getCouleursProgression(progression.pourcentageCompletion).couleur">
+                    </div>
+                  </div>
+                  <div class="progress-text">
+                    {{ progression.pourcentageCompletion | number:'1.0-0' }}% complété
+                  </div>
+                </div>
+                
+                <button class="btn-continue">
+                  <i class="fas fa-arrow-right"></i>
+                </button>
+              </div>
+            </div>
+            
+            <ng-template #noProgressions>
+              <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>Aucun cours en cours</p>
+                <button class="btn btn-primary" (click)="changerVue('catalogue')">
+                  Découvrir les cours
+                </button>
+              </div>
+            </ng-template>
+          </div>
+
+          <!-- Badges récents -->
+          <div class="dashboard-card badges-card" *ngIf="mesBadges.length > 0">
+            <h3>
+              <i class="fas fa-medal"></i>
+              Derniers Badges
+            </h3>
+            
+            <div class="badges-list">
+              <div 
+                class="badge-item"
+                *ngFor="let badge of mesBadges | slice:0:4"
+                [title]="badge.description">
+                
+                <div class="badge-icon" [style.background-color]="badge.couleur">
+                  {{ badge.icone }}
+                </div>
+                <div class="badge-info">
+                  <div class="badge-name">{{ badge.nom }}</div>
+                  <div class="badge-points">+{{ badge.pointsExperience }} XP</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommandations IA -->
+          <div class="dashboard-card recommendations-card">
+            <h3>
+              <i class="fas fa-robot"></i>
+              Recommandations IA
+            </h3>
+            
+            <div class="recommendations-list">
+              <div class="recommendation-item">
+                <div class="recommendation-icon">
+                  <i class="fas fa-lightbulb"></i>
+                </div>
+                <div class="recommendation-content">
+                  <h4>Approfondissez vos connaissances</h4>
+                  <p>Basé sur vos résultats, je recommande le cours "Analyse Financière SYSCOHADA"</p>
+                </div>
+              </div>
+              
+              <div class="recommendation-item">
+                <div class="recommendation-icon">
+                  <i class="fas fa-clock"></i>
+                </div>
+                <div class="recommendation-content">
+                  <h4>Optimisez votre temps</h4>
+                  <p>Sessions de 45 minutes le matin semblent être votre rythme optimal</p>
+                </div>
+              </div>
+            </div>
+            
+            <button class="btn btn-outline" (click)="voirRecommandationsIA()">
+              Voir toutes les recommandations
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VUE CATALOGUE -->
+      <div class="vue-catalogue" *ngIf="vueActive === 'catalogue'">
+        
+        <!-- Barre de recherche et filtres -->
+        <div class="search-section">
+          <form [formGroup]="rechercheForm" class="search-form">
+            <div class="search-input-group">
+              <i class="fas fa-search search-icon"></i>
+              <input 
+                type="text"
+                formControlName="terme"
+                placeholder="Rechercher un cours, une compétence..."
+                class="search-input">
+              
+              <button 
+                type="button"
+                class="btn-clear"
+                *ngIf="rechercheForm.get('terme')?.value"
+                (click)="viderRecherche()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </form>
+
+          <!-- Suggestions de recherche -->
+          <div class="search-suggestions" *ngIf="suggestionsRecherche.length > 0">
+            <span>Suggestions :</span>
+            <button 
+              class="suggestion-tag"
+              *ngFor="let suggestion of suggestionsRecherche"
+              (click)="utiliserSuggestion(suggestion)">
+              {{ suggestion }}
+            </button>
+          </div>
+
+          <!-- Filtres -->
+          <form [formGroup]="filtresForm" class="filters-form">
+            <div class="filters-grid">
+              
+              <div class="filter-group">
+                <label>Catégorie</label>
+                <select formControlName="categorie" class="filter-select">
+                  <option value="">Toutes les catégories</option>
+                  <option *ngFor="let cat of categoriesDisponibles" [value]="cat">
+                    {{ getCategorieLabel(cat) }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Niveau</label>
+                <select formControlName="niveau" class="filter-select">
+                  <option value="">Tous les niveaux</option>
+                  <option value="debutant">Débutant</option>
+                  <option value="intermediaire">Intermédiaire</option>
+                  <option value="avance">Avancé</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="gratuitSeulement">
+                  <span class="checkmark"></span>
+                  Cours gratuits uniquement
+                </label>
+              </div>
+
+              <div class="filter-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" formControlName="avecCertificat">
+                  <span class="checkmark"></span>
+                  Avec certification
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Résultats -->
+        <div class="results-section">
+          <div class="results-header">
+            <h2>
+              {{ totalElements }} cours trouvé{{ totalElements > 1 ? 's' : '' }}
+            </h2>
+            
+            <div class="view-controls">
+              <button class="view-toggle active">
+                <i class="fas fa-th"></i>
+              </button>
+              <button class="view-toggle">
+                <i class="fas fa-list"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Grille des cours -->
+          <div class="courses-grid" *ngIf="coursAffiches.length > 0; else noResults">
+            <div 
+              class="course-card"
+              *ngFor="let cours of coursAffiches; trackBy: trackCoursById"
+              (click)="ouvrirDetailsCours(cours.id)">
+              
+              <div class="course-image">
+                <img [src]="getImageCategorie(cours.categorie)" [alt]="cours.titre">
+                
+                <div class="course-badges">
+                  <span class="badge level-badge" [ngClass]="'level-' + cours.niveau">
+                    {{ cours.niveau | titlecase }}
+                  </span>
+                  
+                  <span class="badge price-badge" *ngIf="!cours.gratuit">
+                    {{ cours.prix }} FCFA
+                  </span>
+                  
+                  <span class="badge free-badge" *ngIf="cours.gratuit">
+                    Gratuit
+                  </span>
+                </div>
+
+                <!-- Indicateur progression si inscrit -->
+                <div 
+                  class="progress-indicator"
+                  *ngIf="getProgressionCours(cours.id) as progression">
+                  <div 
+                    class="progress-circle"
+                    [style.background]="'conic-gradient(#10B981 ' + progression.pourcentageCompletion * 3.6 + 'deg, #E5E7EB 0deg)'">
+                    <span>{{ progression.pourcentageCompletion | number:'1.0-0' }}%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="course-content">
+                <div class="course-category">
+                  {{ getCategorieLabel(cours.categorie) }}
+                </div>
+                
+                <h3 class="course-title">{{ cours.titre }}</h3>
+                
+                <p class="course-description">
+                  {{ cours.description | slice:0:120 }}{{ cours.description.length > 120 ? '...' : '' }}
+                </p>
+
+                <div class="course-meta">
+                  <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    {{ formaterDuree(cours.dureeEstimee * 60) }}
+                  </div>
+                  
+                  <div class="meta-item">
+                    <i class="fas fa-users"></i>
+                    {{ cours.nombreEtudiants }} étudiants
+                  </div>
+                  
+                  <div class="meta-item" *ngIf="cours.certification.disponible">
+                    <i class="fas fa-certificate"></i>
+                    Certificat
+                  </div>
+                </div>
+
+                <div class="course-rating" *ngIf="cours.notemoyenne > 0">
+                  <div class="stars">
+                    <i 
+                      class="fas fa-star"
+                      *ngFor="let star of getStarsArray(cours.notemoyenne)"
+                      [class.filled]="star <= cours.notemoyenne">
+                    </i>
+                  </div>
+                  <span class="rating-text">{{ cours.notemoyenne | number:'1.1-1' }} ({{ cours.tauxReussite }}%)</span>
+                </div>
+
+                <div class="course-actions">
+                  <button 
+                    class="btn btn-primary btn-block"
+                    *ngIf="!estDejaInscrit(cours.id)"
+                    (click)="$event.stopPropagation(); trackCoursClick(cours, 'inscription'); ouvrirDetailsCours(cours.id)">
+                    
+                    <i class="fas fa-plus"></i>
+                    S'inscrire
+                  </button>
+
+                  <button 
+                    class="btn btn-success btn-block"
+                    *ngIf="estDejaInscrit(cours.id)"
+                    (click)="$event.stopPropagation(); reprendreCours(cours.id)">
+                    
+                    <i class="fas fa-play"></i>
+                    Continuer
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- État vide -->
+          <ng-template #noResults>
+            <div class="empty-results">
+              <i class="fas fa-search"></i>
+              <h3>Aucun cours trouvé</h3>
+              <p>Essayez de modifier vos critères de recherche ou explorez nos catégories.</p>
+              <button class="btn btn-primary" (click)="viderRecherche()">
+                Voir tous les cours
+              </button>
+            </div>
+          </ng-template>
+
+          <!-- Pagination -->
+          <div class="pagination-section" *ngIf="nombrePages > 1">
+            <nav class="pagination">
+              <button 
+                class="page-btn"
+                [disabled]="pageActuelle === 1"
+                (click)="changerPage(pageActuelle - 1)">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+
+              <button 
+                class="page-btn"
+                *ngFor="let page of getPagesArray()"
+                [class.active]="page === pageActuelle"
+                (click)="changerPage(page)">
+                {{ page }}
+              </button>
+
+              <button 
+                class="page-btn"
+                [disabled]="pageActuelle === nombrePages"
+                (click)="changerPage(pageActuelle + 1)">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- VUE MES COURS -->
+      <div class="vue-mes-cours" *ngIf="vueActive === 'mes-cours'">
+        <div class="mes-cours-header">
+          <h2>
+            <i class="fas fa-user-graduate"></i>
+            Mes Cours ({{ mesProgressions.length }})
+          </h2>
+          
+          <div class="actions-header">
+            <button class="btn btn-outline" (click)="exporterDonnees()">
+              <i class="fas fa-download"></i>
+              Exporter mes données
+            </button>
+          </div>
+        </div>
+
+        <div class="mes-cours-grid" *ngIf="mesProgressions.length > 0; else noMesCours">
+          <div 
+            class="mon-cours-card"
+            *ngFor="let progression of mesProgressions">
+            
+            <div class="cours-header">
+              <h3>{{ getCoursTitre(progression.coursId) }}</h3>
+              
+              <div 
+                class="statut-badge"
+                [ngClass]="getBadgeStatut(progression.statut).classe">
+                {{ getBadgeStatut(progression.statut).texte }}
+              </div>
+            </div>
+
+            <div class="cours-progress">
+              <div class="progress-info">
+                <span>Progression : {{ progression.pourcentageCompletion | number:'1.0-0' }}%</span>
+                <span>Note : {{ progression.noteActuelle | number:'1.1-1' }}/20</span>
+              </div>
+              
+              <div class="progress-bar">
+                <div 
+                  class="progress-fill"
+                  [style.width.%]="progression.pourcentageCompletion"
+                  [style.background-color]="getCouleursProgression(progression.pourcentageCompletion).couleur">
+                </div>
+              </div>
+            </div>
+
+            <div class="cours-stats">
+              <div class="stat-item">
+                <i class="fas fa-clock"></i>
+                {{ formaterDuree(progression.tempsTotal) }}
+              </div>
+              
+              <div class="stat-item">
+                <i class="fas fa-calendar"></i>
+                {{ progression.dateDerniereActivite | date:'short' }}
+              </div>
+              
+              <div class="stat-item">
+                <i class="fas fa-fire"></i>
+                {{ progression.streakJours }} jours
+              </div>
+            </div>
+
+            <div class="cours-actions">
+              <button 
+                class="btn btn-primary"
+                (click)="reprendreCours(progression.coursId)">
+                <i class="fas fa-play"></i>
+                Continuer
+              </button>
+              
+              <button 
+                class="btn btn-outline"
+                *ngIf="progression.statut === 'complete'"
+                (click)="genererCertificat(progression.coursId)">
+                <i class="fas fa-certificate"></i>
+                Certificat
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noMesCours>
+          <div class="empty-state">
+            <i class="fas fa-graduation-cap"></i>
+            <h3>Aucun cours suivi</h3>
+            <p>Commencez votre parcours d'apprentissage dès maintenant !</p>
+            <button class="btn btn-primary" (click)="changerVue('catalogue')">
+              Explorer le catalogue
+            </button>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- VUE CERTIFICATS -->
+      <div class="vue-certificats" *ngIf="vueActive === 'certificats'">
+        <div class="certificats-header">
+          <h2>
+            <i class="fas fa-certificate"></i>
+            Mes Certificats ({{ mesCertificats.length }})
+          </h2>
+        </div>
+
+        <div class="certificats-grid" *ngIf="mesCertificats.length > 0; else noCertificats">
+          <div 
+            class="certificat-card"
+            *ngFor="let certificat of mesCertificats"
+            (click)="voirCertificat(certificat)">
+            
+            <div class="certificat-header">
+              <div class="certificat-icon">
+                <i class="fas fa-award"></i>
+              </div>
+              
+              <div class="mention-badge" [ngClass]="'mention-' + certificat.mention">
+                {{ certificat.mention | titlecase }}
+              </div>
+            </div>
+
+            <div class="certificat-content">
+              <h3>{{ certificat.titreCours }}</h3>
+              
+              <div class="certificat-details">
+                <div class="detail-item">
+                  <strong>Note obtenue :</strong>
+                  {{ certificat.noteObtenue }}/{{ certificat.noteMaximale }}
+                </div>
+                
+                <div class="detail-item">
+                  <strong>Date d'obtention :</strong>
+                  {{ certificat.dateObtention | date:'mediumDate' }}
+                </div>
+                
+                <div class="detail-item">
+                  <strong>Validité :</strong>
+                  {{ certificat.dateExpiration ? (certificat.dateExpiration | date:'mediumDate') : 'Permanente' }}
+                </div>
+                
+                <div class="detail-item">
+                  <strong>Numéro :</strong>
+                  <code>{{ certificat.numeroUnique }}</code>
+                </div>
+              </div>
+            </div>
+
+            <div class="certificat-actions">
+              <button 
+                class="btn btn-primary btn-sm"
+                (click)="$event.stopPropagation(); telechargerCertificat(certificat, 'PDF')">
+                <i class="fas fa-download"></i>
+                PDF
+              </button>
+              
+              <button 
+                class="btn btn-outline btn-sm"
+                (click)="$event.stopPropagation(); partagerCertificat(certificat, 'linkedin')">
+                <i class="fab fa-linkedin"></i>
+                Partager
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noCertificats>
+          <div class="empty-state">
+            <i class="fas fa-certificate"></i>
+            <h3>Aucun certificat obtenu</h3>
+            <p>Terminez vos cours avec succès pour obtenir vos premiers certificats !</p>
+            <button class="btn btn-primary" (click)="changerVue('mes-cours')">
+              Voir mes cours
+            </button>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- VUE STATISTIQUES -->
+      <div class="vue-statistiques" *ngIf="vueActive === 'statistiques'">
+        <div class="stats-header">
+          <h2>
+            <i class="fas fa-chart-line"></i>
+            Analytics & Performance
+          </h2>
+        </div>
+
+        <div class="analytics-dashboard" *ngIf="statistiquesEtudiant">
+          
+          <!-- Métriques principales -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-icon">
+                <i class="fas fa-trophy"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ statistiquesEtudiant.niveauMoyen }}</div>
+                <div class="metric-label">Niveau moyen</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ formaterDuree(statistiquesEtudiant.tempsApprentissageTotal) }}</div>
+                <div class="metric-label">Temps total</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">
+                <i class="fas fa-star"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ statistiquesEtudiant.noteMoyenne | number:'1.1-1' }}</div>
+                <div class="metric-label">Note moyenne</div>
+              </div>
+            </div>
+
+            <div class="metric-card">
+              <div class="metric-icon">
+                <i class="fas fa-fire"></i>
+              </div>
+              <div class="metric-content">
+                <div class="metric-value">{{ statistiquesEtudiant.streakMaximum }}</div>
+                <div class="metric-label">Meilleur streak</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Graphiques et analyses -->
+          <div class="analytics-charts">
+            <div class="chart-container">
+              <h3>Évolution des performances</h3>
+              <div class="chart-placeholder">
+                <i class="fas fa-chart-line"></i>
+                <p>Graphique d'évolution des notes</p>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <h3>Répartition par catégorie</h3>
+              <div class="chart-placeholder">
+                <i class="fas fa-chart-pie"></i>
+                <p>Temps passé par catégorie</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE DÉTAILS COURS -->
+<div class="modal-overlay" *ngIf="modalInscriptionOuverte" (click)="fermerModaleInscription()">
+  <div class="modal-content course-details-modal" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header">
+      <h2>{{ coursSelectionne?.titre }}</h2>
+      <button class="btn-close" (click)="fermerModaleInscription()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="coursSelectionne">
+      
+      <div class="course-overview">
+        <div class="course-image-large">
+          <img [src]="getImageCategorie(coursSelectionne.categorie)" [alt]="coursSelectionne.titre">
+        </div>
+
+        <div class="course-info-detailed">
+          <div class="course-badges">
+            <span class="badge" [ngClass]="'level-' + coursSelectionne.niveau">
+              {{ coursSelectionne.niveau | titlecase }}
+            </span>
+            <span class="badge" [ngClass]="coursSelectionne.gratuit ? 'free-badge' : 'price-badge'">
+              {{ coursSelectionne.gratuit ? 'Gratuit' : (coursSelectionne.prix + ' FCFA') }}
+            </span>
+          </div>
+
+          <p class="course-description-full">{{ coursSelectionne.description }}</p>
+
+          <div class="course-metrics">
+            <div class="metric">
+              <i class="fas fa-clock"></i>
+              <span>{{ formaterDuree(coursSelectionne.dureeEstimee * 60) }}</span>
+            </div>
+            <div class="metric">
+              <i class="fas fa-users"></i>
+              <span>{{ coursSelectionne.nombreEtudiants }} étudiants</span>
+            </div>
+            <div class="metric">
+              <i class="fas fa-star"></i>
+              <span>{{ coursSelectionne.notemoyenne | number:'1.1-1' }}/5</span>
+            </div>
+            <div class="metric" *ngIf="coursSelectionne.certification.disponible">
+              <i class="fas fa-certificate"></i>
+              <span>Certificat inclus</span>
+            </div>
+          </div>
+
+          <div class="course-objectives" *ngIf="coursSelectionne.objectifs.length > 0">
+            <h4>Objectifs d'apprentissage</h4>
+            <ul>
+              <li *ngFor="let objectif of coursSelectionne.objectifs">
+                {{ objectif.description }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="course-modules" *ngIf="coursSelectionne.modules.length > 0">
+            <h4>Contenu du cours ({{ coursSelectionne.modules.length }} modules)</h4>
+            <div class="modules-list">
+              <div class="module-item" *ngFor="let module of coursSelectionne.modules">
+                <div class="module-title">
+                  <i class="fas fa-play-circle"></i>
+                  {{ module.titre }}
+                </div>
+                <div class="module-duration">{{ formaterDuree(module.dureeEstimee * 60) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" (click)="fermerModaleInscription()">
+        Annuler
+      </button>
+      
+      <button 
+        class="btn btn-primary btn-large"
+        [disabled]="chargementEnCours"
+        (click)="inscrireAuCours(coursSelectionne!)">
+        
+        <i class="fas fa-spinner fa-spin" *ngIf="chargementEnCours"></i>
+        <i class="fas fa-plus" *ngIf="!chargementEnCours && !estDejaInscrit(coursSelectionne!.id)"></i>
+        <i class="fas fa-play" *ngIf="!chargementEnCours && estDejaInscrit(coursSelectionne!.id)"></i>
+        
+        {{ estDejaInscrit(coursSelectionne!.id) ? 'Accéder au cours' : 'S\'inscrire au cours' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CERTIFICAT -->
+<div class="modal-overlay" *ngIf="modalCertificatOuverte" (click)="fermerModaleCertificat()">
+  <div class="modal-content certificat-modal" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header">
+      <h2>Certificat de réussite</h2>
+      <button class="btn-close" (click)="fermerModaleCertificat()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="certificatSelectionne">
+      
+      <div class="certificat-preview">
+        <div class="certificat-design">
+          <div class="certificat-border">
+            <div class="certificat-content-preview">
+              
+              <div class="certificat-logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h3>E-COMPTA-IA</h3>
+              </div>
+
+              <div class="certificat-title">
+                <h2>Certificat de Réussite</h2>
+              </div>
+
+              <div class="certificat-recipient">
+                <p>Décerné à</p>
+                <h1>{{ certificatSelectionne.nomEtudiant }}</h1>
+              </div>
+
+              <div class="certificat-course">
+                <p>Pour avoir complété avec succès le cours</p>
+                <h2>{{ certificatSelectionne.titreCours }}</h2>
+              </div>
+
+              <div class="certificat-details-preview">
+                <div class="detail-row">
+                  <span>Note obtenue :</span>
+                  <strong>{{ certificatSelectionne.noteObtenue }}/{{ certificatSelectionne.noteMaximale }}</strong>
+                </div>
+                <div class="detail-row">
+                  <span>Mention :</span>
+                  <strong class="mention" [ngClass]="'mention-' + certificatSelectionne.mention">
+                    {{ certificatSelectionne.mention | titlecase }}
+                  </strong>
+                </div>
+                <div class="detail-row">
+                  <span>Date d'obtention :</span>
+                  <strong>{{ certificatSelectionne.dateObtention | date:'longDate' }}</strong>
+                </div>
+              </div>
+
+              <div class="certificat-signature">
+                <div class="signature-line">
+                  <div class="signature-text">Signature numérique</div>
+                  <div class="verification-code">{{ certificatSelectionne.numeroUnique }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <div class="certificat-actions-extended">
+        
+        <div class="download-options">
+          <h4>Télécharger</h4>
+          <div class="download-buttons">
+            <button class="btn btn-primary" (click)="telechargerCertificat(certificatSelectionne!, 'PDF')">
+              <i class="fas fa-file-pdf"></i>
+              PDF
+            </button>
+            <button class="btn btn-outline" (click)="telechargerCertificat(certificatSelectionne!, 'PNG')">
+              <i class="fas fa-image"></i>
+              Image
+            </button>
+          </div>
+        </div>
+
+        <div class="share-options">
+          <h4>Partager</h4>
+          <div class="share-buttons">
+            <button class="btn btn-linkedin" (click)="partagerCertificat(certificatSelectionne!, 'linkedin')">
+              <i class="fab fa-linkedin"></i>
+              LinkedIn
+            </button>
+            <button class="btn btn-twitter" (click)="partagerCertificat(certificatSelectionne!, 'twitter')">
+              <i class="fab fa-twitter"></i>
+              Twitter
+            </button>
+            <button class="btn btn-facebook" (click)="partagerCertificat(certificatSelectionne!, 'facebook')">
+              <i class="fab fa-facebook"></i>
+              Facebook
+            </button>
+          </div>
+        </div>
+
+        <div class="verification-info">
+          <h4>Vérification</h4>
+          <p>Lien de vérification :</p>
+          <div class="verification-link">
+            <input 
+              type="text" 
+              [value]="window.location.origin + certificatSelectionne!.urlVerification" 
+              readonly>
+            <button class="btn btn-copy" (click)="partagerCertificat(certificatSelectionne!, 'copy')">
+              <i class="fas fa-copy"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,97 @@
+{
+  "id": "ex_achat_001",
+  "titre": "Achat de marchandises avec TVA déductible",
+  "secteur": "commerce",
+  "description": "Achat de marchandises auprès d'un fournisseur avec TVA déductible à 18%",
+  
+  "contexte": {
+    "entreprise": "Société commerciale",
+    "pays": "CI",
+    "regime_tva": "reel_normal",
+    "taux_tva": 18,
+    "monnaie": "XOF"
+  },
+  
+  "operation": {
+    "date": "2024-03-15",
+    "libelle": "Achat marchandises Fournisseur ABC",
+    "montant_ht": 1000000,
+    "tva": 180000,
+    "montant_ttc": 1180000,
+    "reference": "FACT-2024-001",
+    "fournisseur": "ABC SARL"
+  },
+  
+  "ecriture_comptable": {
+    "journal": "ACH",
+    "numero": "ACH-2024-0001",
+    "date": "2024-03-15",
+    "libelle": "Achat marchandises ABC SARL",
+    "lignes": [
+      {
+        "compte": "601100",
+        "libelle_compte": "Achats de marchandises",
+        "debit": 1000000,
+        "credit": 0,
+        "tiers": "FOUR001",
+        "devise": "XOF"
+      },
+      {
+        "compte": "445100",
+        "libelle_compte": "TVA déductible sur achats",
+        "debit": 180000,
+        "credit": 0,
+        "tiers": null,
+        "devise": "XOF"
+      },
+      {
+        "compte": "401100",
+        "libelle_compte": "Fournisseurs",
+        "debit": 0,
+        "credit": 1180000,
+        "tiers": "FOUR001",
+        "devise": "XOF"
+      }
+    ]
+  },
+  
+  "controles": {
+    "equilibre": true,
+    "coherence_tva": true,
+    "comptes_valides": true,
+    "tiers_coherent": true
+  },
+  
+  "regles_appliquees": [
+    "Débit compte de charges (classe 6)",
+    "Débit TVA déductible si entreprise assujettie",
+    "Crédit compte fournisseur (classe 4)",
+    "Équilibre débit = crédit"
+  ],
+  
+  "variantes": [
+    {
+      "cas": "Entreprise non assujettie TVA",
+      "modification": "Pas de ligne TVA déductible, montant TTC en 601100"
+    },
+    {
+      "cas": "Achat immobilisation",
+      "modification": "Utiliser compte classe 2 au lieu de classe 6"
+    }
+  ],
+  
+  "mots_cles": [
+    "achat", "marchandises", "tva", "fournisseur", "classe6", "syscohada"
+  ],
+  
+  "niveau_difficulte": "facile",
+  "frequence_utilisation": "tres_haute",
+  
+  "metadata": {
+    "auteur": "Expert-comptable SYSCOHADA",
+    "date_creation": "2024-03-01",
+    "validation": "expert",
+    "source": "Pratique courante AUDCIF",
+    "version": "1.0"
+  }
+}

@@ -1,0 +1,228 @@
+{
+  "titre": "Recueil Complet des Textes Fiscaux du Burkina Faso 2024",
+  "categorie": "reglementaire",
+  "domaine": "fiscal",
+  "pays": ["BF"],
+  "datePublication": "2024-01-01",
+  "dateValidite": "2024-12-31",
+  "source": "Direction Générale des Impôts & Ministère des Finances - Burkina Faso",
+  "fiabilite": "officielle",
+  "version": "2024.1_recueil_complet",
+  "pages": "700+",
+  "taille": "5.8MB",
+  
+  "mots_cles": [
+    "burkina faso", "recueil fiscal", "textes fiscaux", "BF", "fiscal", "2024",
+    "code general impots", "CGI", "loi finances", "arrete ministeriel",
+    "instruction fiscale", "circulaire", "note service", "procedures",
+    "impot sur societes", "IBIC", "TVA", "IRPP", "ITS", "IBNC",
+    "taxes specifiques", "TSP", "contribution secteur informel", "CSI",
+    "impot foncier", "droits enregistrement", "timbre", "patente",
+    "retenues source", "acomptes", "declarations", "paiements",
+    "controle fiscal", "verification", "redressement", "sanctions",
+    "contentieux", "recours", "prescription", "penalites",
+    "exonerations", "incitations", "regime fiscal", "taux imposition",
+    "bases imposables", "deductions", "abattements", "credits impot",
+    "formulaires", "echeances", "obligations", "comptabilite",
+    "facturation", "registres", "archivage", "justificatifs"
+  ],
+  
+  "resume": "Recueil exhaustif de tous les textes fiscaux en vigueur au Burkina Faso pour 2024. Document de référence de 700+ pages compilant le Code Général des Impôts, les lois de finances, arrêtés ministériels, instructions, circulaires et notes de service. Couvre l'intégralité de la réglementation fiscale burkinabè applicable aux personnes physiques et morales.",
+  
+  "langues": ["fr"],
+  
+  "contenu_exhaustif": {
+    "partie_1": "Code Général des Impôts (CGI) complet",
+    "partie_2": "Loi de Finances 2024 et modifications",
+    "partie_3": "Arrêtés ministériels d'application",
+    "partie_4": "Instructions de la Direction Générale des Impôts",
+    "partie_5": "Circulaires et notes de service",
+    "partie_6": "Procédures administratives détaillées",
+    "partie_7": "Formulaires officiels et modèles",
+    "partie_8": "Barèmes et taux applicables",
+    "partie_9": "Textes OHADA applicables",
+    "partie_10": "Index alphabétique et tables"
+  },
+  
+  "impots_taxes_couverts": [
+    "Impôt sur les Bénéfices Industriels et Commerciaux (IBIC)",
+    "Impôt sur les Bénéfices Non Commerciaux (IBNC)",
+    "Impôt sur les Traitements et Salaires (ITS)",
+    "Impôt sur les Revenus des Valeurs Mobilières (IRVM)",
+    "Taxe sur la Valeur Ajoutée (TVA)",
+    "Taxe Spécifique sur certains Produits (TSP)",
+    "Contribution du Secteur Informel (CSI)",
+    "Taxe de Développement Communal (TDC)",
+    "Impôt Foncier sur le Bâti (IFB)",
+    "Impôt Foncier sur le Non Bâti (IFNB)",
+    "Droits d'Enregistrement et de Timbre",
+    "Taxe sur les Véhicules à Moteur (TVM)",
+    "Contribution des Patentes",
+    "Taxes sur les spectacles et jeux",
+    "Droits de douane (aspects fiscaux)",
+    "Retenues à la source diverses"
+  ],
+  
+  "procedures_detaillees": [
+    "Régimes d'imposition (réel normal, réel simplifié, synthèse)",
+    "Obligations déclaratives et échéances",
+    "Modalités de paiement et acomptes",
+    "Tenue de la comptabilité fiscale",
+    "Facturation et justificatifs",
+    "Contrôles fiscaux et vérifications",
+    "Procédures de redressement",
+    "Recours et réclamations",
+    "Contentieux fiscal et sanctions",
+    "Prescription et délais",
+    "Exonérations et incitations",
+    "Conventions fiscales internationales"
+  ],
+  
+  "taux_principaux_2024": {
+    "IBIC_taux_normal": "27.5%",
+    "IBIC_taux_reduit_PME": "25%",
+    "IBNC_taux_liberal": "5.5%",
+    "ITS_bareme_max": "30%",
+    "TVA_taux_normal": "18%",
+    "TVA_taux_reduit": "9%",
+    "TVA_export": "0%",
+    "TSP_carburants": "variables",
+    "CSI_forfait": "selon activité",
+    "retenue_source_dividendes": "12.5%",
+    "retenue_source_interets": "15%",
+    "retenue_source_loyers": "15%"
+  },
+  
+  "seuils_importants_2024": {
+    "regime_reel_normal": "> 50 000 000 FCFA",
+    "regime_reel_simplifie": "10 000 000 - 50 000 000 FCFA",
+    "regime_synthese": "< 10 000 000 FCFA",
+    "assujettissement_TVA": "> 50 000 000 FCFA",
+    "seuil_CSI": "< 10 000 000 FCFA",
+    "minimum_perception_IBIC": "75 000 FCFA",
+    "minimum_perception_IBNC": "37 500 FCFA"
+  },
+  
+  "echeances_fiscales": {
+    "declarations_annuelles": "31 mars",
+    "acomptes_IBIC": "15 juin et 15 décembre",
+    "ITS_employeurs": "15 du mois suivant",
+    "TVA_mensuelle": "15 du mois suivant",
+    "TVA_trimestrielle": "15 du mois suivant le trimestre",
+    "retenues_source": "15 du mois suivant"
+  },
+  
+  "utilisation_recommandee": [
+    "Référence complète pour professionnels fiscaux",
+    "Formation approfondie en fiscalité burkinabè",
+    "Conseils aux entreprises multinationales",
+    "Vérification exhaustive de conformité",
+    "Recherche académique et juridique",
+    "Préparation examens professionnels",
+    "Audit fiscal et due diligence",
+    "Planification fiscale stratégique",
+    "Résolution de contentieux complexes",
+    "Élaboration de politiques fiscales"
+  ],
+  
+  "secteurs_activite_couverts": [
+    "Industries manufacturières",
+    "Services financiers et bancaires",
+    "Télécommunications et technologies",
+    "Agriculture et agro-industrie",
+    "Mines et ressources naturelles",
+    "BTP et travaux publics",
+    "Commerce et distribution",
+    "Transport et logistique",
+    "Tourisme et hôtellerie",
+    "Professions libérales",
+    "Artisanat et secteur informel",
+    "Organisations internationales",
+    "ONGs et associations"
+  ],
+  
+  "comparaisons_internationales": {
+    "OHADA": "Harmonisation avec directives OHADA",
+    "UEMOA": "Conformité aux normes UEMOA",
+    "conventions_fiscales": "Éviter double imposition",
+    "benchmarking_regional": "Comparaison avec pays voisins"
+  },
+  
+  "mise_a_jour": {
+    "derniere_modification": "2024-01-01",
+    "prochaine_revision": "2025-01-01",
+    "changelog": "Compilation exhaustive 2024 - Tous textes fiscaux",
+    "historique": "Version consolidée incluant toutes modifications 2024"
+  },
+  
+  "complementaires_essentiels": [
+    "Loi de Finances rectificative 2024",
+    "Décrets d'application spécifiques",
+    "Conventions fiscales bilatérales",
+    "Jurisprudence fiscale burkinabè",
+    "Guides pratiques DGI",
+    "Formulaires et imprimés officiels"
+  ],
+  
+  "niveau_priorite": "maximale",
+  "frequence_consultation_estimee": "quotidienne",
+  "document_reference": "primaire",
+  
+  "compatibilite_ia": {
+    "indexation_complete": true,
+    "extraction_taux_automatique": true,
+    "generation_exemples": true,
+    "calculs_automatiques": true,
+    "comparaison_pays_ohada": true,
+    "recherche_semantique": true,
+    "citations_precisees": true,
+    "mise_a_jour_tracking": true
+  },
+  
+  "structure_navigation": {
+    "index_alphabetique": "inclus",
+    "table_matieres": "détaillée",
+    "renvois_croises": "nombreux",
+    "annexes": "formulaires et barèmes",
+    "bibliographie": "textes de référence"
+  },
+  
+  "contact_source": {
+    "organisme_principal": "Direction Générale des Impôts du Burkina Faso",
+    "ministere": "Ministère de l'Économie et des Finances",
+    "site_web": "www.impots.gov.bf",
+    "email": "contact@impots.gov.bf",
+    "telephone": "+226 25 xx xx xx",
+    "adresse": "01 BP 7008 Ouagadougou 01, Burkina Faso",
+    "heures_service": "7h30-12h30 / 13h30-16h30"
+  },
+  
+  "certifications": [
+    "Document officiel publié au Journal Officiel",
+    "Validé par le Conseil des Ministres",
+    "Conforme aux directives OHADA et UEMOA",
+    "Applicable sur tout le territoire national",
+    "Opposable aux tiers et administrations"
+  ],
+  
+  "notes_techniques": [
+    "Recueil exhaustif 700+ pages - Document de référence complet",
+    "Compilation officielle de tous les textes fiscaux 2024",
+    "Inclut modifications, abrogations et nouveautés",
+    "Format optimisé pour recherche électronique",
+    "Indexation complète pour IA E-COMPTA-IA",
+    "Mise à jour continue selon évolutions réglementaires",
+    "Document maître pour fiscalité burkinabè"
+  ],
+  
+  "questions_types_ia": [
+    "Quel est le taux IBIC pour PME au Burkina Faso ?",
+    "Comment calculer la TVA export BF ?",
+    "Quelles sont les échéances ITS employeurs ?",
+    "Procédure contrôle fiscal Burkina Faso ?",
+    "Exonérations investissements industriels BF ?",
+    "Barème ITS 2024 Burkina Faso complet ?",
+    "Seuils régimes fiscaux BF 2024 ?",
+    "Retenues source non-résidents BF ?"
+  ]
+}

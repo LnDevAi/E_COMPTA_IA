@@ -1,0 +1,477 @@
+# ===================================================
+# SCHEMA GRAPHQL - E-COMPTA-IA API
+# Backend pour plateforme comptable SYSCOHADA
+# ===================================================
+
+# ===================================================
+# ENTREPRISES
+# ===================================================
+type Entreprise @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  nom: String!
+  secteurActivite: String!
+  numeroRCCM: String
+  numeroNIF: String
+  adresse: String
+  telephone: String
+  email: String
+  responsableLegal: String
+  
+  # Configuration fiscale
+  regimeFiscal: RegimeFiscal!
+  
+  # Relations
+  utilisateurs: [Utilisateur] @hasMany(indexName: "byEntreprise", fields: ["id"])
+  comptes: [CompteComptable] @hasMany(indexName: "byEntreprise", fields: ["id"])
+  journaux: [Journal] @hasMany(indexName: "byEntreprise", fields: ["id"])
+  ecritures: [EcritureComptable] @hasMany(indexName: "byEntreprise", fields: ["id"])
+  exercices: [ExerciceComptable] @hasMany(indexName: "byEntreprise", fields: ["id"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  dateMiseAJour: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# UTILISATEURS ET PERMISSIONS
+# ===================================================
+type Utilisateur @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  nom: String!
+  prenom: String!
+  email: String!
+  telephone: String
+  
+  # Permissions
+  role: RoleUtilisateur!
+  permissions: [Permission!]!
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  
+  # Métadonnées
+  dernierAcces: AWSDateTime
+  actif: Boolean!
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# PLAN COMPTABLE
+# ===================================================
+type CompteComptable @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  numero: String!
+  intitule: String!
+  classe: ClasseCompte!
+  nature: NatureCompte!
+  
+  # Hiérarchie
+  compteParentID: ID
+  compteParent: CompteComptable @belongsTo(fields: ["compteParentID"])
+  sousComptes: [CompteComptable] @hasMany(indexName: "byCompteParent", fields: ["id"])
+  
+  # Configuration
+  collectif: Boolean!
+  analytique: Boolean!
+  lettrage: Boolean!
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  mouvements: [MouvementComptable] @hasMany(indexName: "byCompte", fields: ["id"])
+  
+  # Métadonnées
+  actif: Boolean!
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# JOURNAUX COMPTABLES
+# ===================================================
+type Journal @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  code: String!
+  libelle: String!
+  type: TypeJournal!
+  
+  # Configuration
+  numeroSequence: Int!
+  prefixeEcriture: String
+  contrepartieParDefaut: String
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  ecritures: [EcritureComptable] @hasMany(indexName: "byJournal", fields: ["id"])
+  
+  # Métadonnées
+  actif: Boolean!
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# ÉCRITURES COMPTABLES
+# ===================================================
+type EcritureComptable @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  numero: String!
+  date: AWSDate!
+  libelle: String!
+  reference: String
+  
+  # Statut
+  statut: StatutEcriture!
+  dateValidation: AWSDateTime
+  validePar: String
+  
+  # Totaux
+  totalDebit: Float!
+  totalCredit: Float!
+  
+  # Relations
+  journalID: ID! @index(name: "byJournal")
+  journal: Journal @belongsTo(fields: ["journalID"])
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  mouvements: [MouvementComptable] @hasMany(indexName: "byEcriture", fields: ["id"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  dateMiseAJour: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# MOUVEMENTS COMPTABLES
+# ===================================================
+type MouvementComptable @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  sens: SensMouvement!
+  montant: Float!
+  libelle: String!
+  
+  # Lettrage
+  lettrage: String
+  dateLettrage: AWSDateTime
+  lettrePar: String
+  
+  # Relations
+  ecritureID: ID! @index(name: "byEcriture")
+  ecriture: EcritureComptable @belongsTo(fields: ["ecritureID"])
+  compteID: ID! @index(name: "byCompte")
+  compte: CompteComptable @belongsTo(fields: ["compteID"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# EXERCICE COMPTABLE
+# ===================================================
+type ExerciceComptable @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  annee: Int!
+  dateDebut: AWSDate!
+  dateFin: AWSDate!
+  statut: StatutExercice!
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  dateCloture: AWSDateTime
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# RAPPROCHEMENTS BANCAIRES
+# ===================================================
+type RapprochementBancaire @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  nomBanque: String!
+  numeroCompte: String!
+  periode: AWSDate!
+  
+  # Soldes
+  soldeInitial: Float!
+  soldeFinal: Float!
+  soldeRapproche: Float!
+  
+  # Statut
+  statut: StatutRapprochement!
+  dateClôture: AWSDateTime
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  lignes: [LigneRapprochement] @hasMany(indexName: "byRapprochement", fields: ["id"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+type LigneRapprochement @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  dateOperation: AWSDate!
+  libelle: String!
+  montant: Float!
+  sens: SensMouvement!
+  
+  # Statut rapprochement
+  rapproche: Boolean!
+  dateRapprochement: AWSDateTime
+  
+  # Relations
+  rapprochementID: ID! @index(name: "byRapprochement")
+  rapprochement: RapprochementBancaire @belongsTo(fields: ["rapprochementID"])
+  mouvementID: ID
+  mouvement: MouvementComptable @belongsTo(fields: ["mouvementID"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# CONFIGURATION FISCALE
+# ===================================================
+type ConfigurationTaxeFiscale @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  nom: String!
+  type: TypeTaxe!
+  nature: NatureTaxe!
+  
+  # Configuration calcul
+  modeCalcul: ModeCalculTaxe!
+  taux: Float
+  montantFixe: Float
+  
+  # Comptes comptables
+  compteCollecte: String
+  compteDeduction: String
+  compteDeclaration: String
+  
+  # Périodicité
+  periodicite: PeriodiciteTaxe!
+  jourEcheance: Int
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  
+  # Métadonnées
+  actif: Boolean!
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# BALANCE N-1
+# ===================================================
+type BalanceN1 @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  exercice: Int!
+  
+  # Fichier uploadé
+  fichierOriginal: String
+  formatFichier: FormatBalance!
+  
+  # Données structurées
+  lignesBalance: [LigneBalanceN1!]!
+  
+  # Totaux
+  totalDebitN1: Float!
+  totalCreditN1: Float!
+  resultatN1: Float!
+  
+  # Statut
+  statut: StatutBalance!
+  dateValidation: AWSDateTime
+  anomalies: [String!]!
+  
+  # Relations
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  reportNouveau: ReportNouveau @hasOne(fields: ["id"])
+  
+  # Métadonnées
+  dateCreation: AWSDateTime!
+  owner: String @index(name: "byOwner")
+}
+
+type LigneBalanceN1 {
+  numeroCompte: String!
+  intituleCompte: String!
+  soldeDebitN1: Float!
+  soldeCreditN1: Float!
+  mouvementDebitN1: Float!
+  mouvementCreditN1: Float!
+}
+
+type ReportNouveau @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  exerciceOrigine: Int!
+  exerciceDestination: Int!
+  
+  # Calculs automatiques
+  resultatN1: Float!
+  capitauxPropres: Float!
+  dettesFournisseurs: Float!
+  creancesClients: Float!
+  tresorerie: Float!
+  
+  # Écritures générées
+  numeroEcritureRAN: String!
+  dateEcritureRAN: AWSDate!
+  
+  # Relations
+  balanceN1ID: ID! @index(name: "byBalanceN1")
+  balanceN1: BalanceN1 @belongsTo(fields: ["balanceN1ID"])
+  entrepriseID: ID! @index(name: "byEntreprise")
+  entreprise: Entreprise @belongsTo(fields: ["entrepriseID"])
+  
+  # Métadonnées
+  dateGeneration: AWSDateTime!
+  genereAutomatiquement: Boolean!
+  owner: String @index(name: "byOwner")
+}
+
+# ===================================================
+# ENUMS
+# ===================================================
+
+enum RegimeFiscal {
+  REEL_NORMAL
+  REEL_SIMPLIFIE
+  FORFAITAIRE
+  MICRO_ENTREPRISE
+}
+
+enum RoleUtilisateur {
+  ADMINISTRATEUR
+  COMPTABLE_SENIOR
+  COMPTABLE_JUNIOR
+  CONSULTANT
+  LECTURE_SEULE
+}
+
+enum Permission {
+  ECRITURE_CREATION
+  ECRITURE_MODIFICATION
+  ECRITURE_VALIDATION
+  ECRITURE_SUPPRESSION
+  RAPPROCHEMENT_GESTION
+  ETATS_FINANCIERS_GENERATION
+  DECLARATIONS_FISCALES
+  PARAMETRAGE_SYSTEME
+  GESTION_UTILISATEURS
+  BALANCE_N1_GESTION
+  REPORT_NOUVEAU_GESTION
+}
+
+enum ClasseCompte {
+  CLASSE_1_CAPITAUX
+  CLASSE_2_IMMOBILISATIONS
+  CLASSE_3_STOCKS
+  CLASSE_4_TIERS
+  CLASSE_5_TRESORERIE
+  CLASSE_6_CHARGES
+  CLASSE_7_PRODUITS
+  CLASSE_8_RESULTATS
+}
+
+enum NatureCompte {
+  DEBIT
+  CREDIT
+  MIXTE
+}
+
+enum TypeJournal {
+  ACHATS
+  VENTES
+  BANQUE
+  CAISSE
+  OPERATIONS_DIVERSES
+  PAIE
+  IMMOBILISATIONS
+  STOCKS
+  ANALYTIQUE
+  BUDGETAIRE
+  CLOTURE
+  SIMULATION
+}
+
+enum StatutEcriture {
+  BROUILLON
+  VALIDEE
+  CLOTUREE
+  ANNULEE
+}
+
+enum SensMouvement {
+  DEBIT
+  CREDIT
+}
+
+enum StatutRapprochement {
+  EN_COURS
+  TERMINE
+  VALIDE
+}
+
+enum StatutExercice {
+  OUVERT
+  FERME
+  CLÔTURE
+}
+
+enum TypeTaxe {
+  TVA
+  IMPOT_SOCIETE
+  TAXE_APPRENTISSAGE
+  CONTRIBUTION_FORMATION
+  TAXE_FONCIERE
+  PATENTE
+}
+
+enum NatureTaxe {
+  COLLECTEE
+  DEDUCTIBLE
+  DECLARATION
+}
+
+enum ModeCalculTaxe {
+  POURCENTAGE
+  MONTANT_FIXE
+  BAREME
+  FORFAIT
+}
+
+enum PeriodiciteTaxe {
+  MENSUELLE
+  TRIMESTRIELLE
+  SEMESTRIELLE
+  ANNUELLE
+}
+
+enum FormatBalance {
+  EXCEL_6_COLONNES
+  CSV_6_COLONNES
+  SAISIE_MANUELLE
+}
+
+enum StatutBalance {
+  EN_COURS
+  VALIDEE
+  ANOMALIES_DETECTEES
+  REJETEE
+}

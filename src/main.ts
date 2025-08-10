@@ -13,9 +13,13 @@ bootstrapApplication(AppComponent, {
   providers: [
     importProvidersFrom(
       BrowserAnimationsModule,
-      RouterModule.forRoot([
+             RouterModule.forRoot([
         { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
         { path: 'dashboard', loadComponent: () => import('./app/components/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+        { path: 'bank-reconciliation', loadComponent: () => import('./app/components/bank-reconciliation/bank-reconciliation.component').then(m => m.BankReconciliationComponent) },
+        { path: 'financial-statements', loadComponent: () => import('./app/components/financial-statements/financial-statements.component').then(m => m.FinancialStatementsComponent) },
+        { path: 'tax-declarations', loadComponent: () => import('./app/components/tax-declarations/tax-declarations.component').then(m => m.TaxDeclarationsComponent) },
+        { path: 'enterprise', loadComponent: () => import('./app/components/enterprise/enterprise.component').then(m => m.EnterpriseComponent) },
         { path: '**', redirectTo: '/dashboard' }
       ])
     )

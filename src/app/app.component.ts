@@ -7,7 +7,7 @@ import { BankReconciliationComponent } from './components/bank-reconciliation/ba
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, DashboardComponent, BankReconciliationComponent],
+  imports: [RouterOutlet, CommonModule],
   template: `
     <div class="app-container">
       <!-- Header -->
@@ -18,57 +18,18 @@ import { BankReconciliationComponent } from './components/bank-reconciliation/ba
             <span class="subtitle">Plateforme Comptable SYSCOHADA + IA</span>
           </div>
           <nav class="nav">
-            <button class="nav-btn" (click)="navigateTo('dashboard')" [class.active]="currentRoute === 'dashboard'">
-              📊 Tableau de Bord
-            </button>
-            <button class="nav-btn" (click)="navigateTo('bank-reconciliation')" [class.active]="currentRoute === 'bank-reconciliation'">
-              🏦 Rapprochements
-            </button>
-            <button class="nav-btn" (click)="navigateTo('financial-statements')" [class.active]="currentRoute === 'financial-statements'">
-              📈 États Financiers
-            </button>
-            <button class="nav-btn" (click)="navigateTo('tax-declarations')" [class.active]="currentRoute === 'tax-declarations'">
-              📋 Déclarations
-            </button>
-            <button class="nav-btn" (click)="navigateTo('ai-assistant')" [class.active]="currentRoute === 'ai-assistant'">
-              🤖 Assistant IA
-            </button>
-            <button class="nav-btn enterprise" (click)="navigateTo('enterprise')" [class.active]="currentRoute === 'enterprise'">
-              🏢 Entreprise
-            </button>
+            <a class="nav-btn" routerLink="/dashboard" routerLinkActive="active">📊 Tableau de Bord</a>
+            <a class="nav-btn" routerLink="/bank-reconciliation" routerLinkActive="active">🏦 Rapprochements</a>
+            <a class="nav-btn" routerLink="/financial-statements" routerLinkActive="active">📈 États Financiers</a>
+            <a class="nav-btn" routerLink="/tax-declarations" routerLinkActive="active">📋 Déclarations</a>
+            <a class="nav-btn enterprise" routerLink="/enterprise" routerLinkActive="active">🏢 Entreprise</a>
           </nav>
         </div>
       </header>
 
       <!-- Main Content -->
       <main class="main-content">
-        <div *ngIf="currentRoute === 'dashboard'">
-          <app-dashboard></app-dashboard>
-        </div>
-        
-        <div *ngIf="currentRoute === 'bank-reconciliation'">
-          <app-bank-reconciliation></app-bank-reconciliation>
-        </div>
-
-        <div *ngIf="currentRoute === 'financial-statements'" class="module-placeholder">
-          <h2>📈 États Financiers</h2>
-          <p>Module en cours de développement - Intégration prévue dans la prochaine version</p>
-        </div>
-
-        <div *ngIf="currentRoute === 'tax-declarations'" class="module-placeholder">
-          <h2>📋 Déclarations Fiscales</h2>
-          <p>Module en cours de développement - Intégration prévue dans la prochaine version</p>
-        </div>
-
-        <div *ngIf="currentRoute === 'ai-assistant'" class="module-placeholder">
-          <h2>🤖 Assistant IA</h2>
-          <p>Module en cours de développement - Intégration prévue dans la prochaine version</p>
-        </div>
-
-        <div *ngIf="currentRoute === 'enterprise'" class="module-placeholder">
-          <h2>🏢 Gestion Entreprise</h2>
-          <p>Module en cours de développement - Intégration prévue dans la prochaine version</p>
-        </div>
+        <router-outlet></router-outlet>
       </main>
 
       <!-- Footer -->
@@ -604,15 +565,4 @@ import { BankReconciliationComponent } from './components/bank-reconciliation/ba
     }
   `]
 })
-export class AppComponent {
-  currentRoute = 'dashboard';
-
-  constructor(private router: Router) {}
-
-  navigateTo(route: string) {
-    this.currentRoute = route;
-    console.log(`🚀 Navigation vers module: ${route}`);
-  }
-
-  // Note: Fonctions spécifiques aux modules déplacées vers leurs composants respectifs
-}
+export class AppComponent {}

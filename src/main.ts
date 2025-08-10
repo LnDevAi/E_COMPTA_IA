@@ -32,7 +32,7 @@ bootstrapApplication(AppComponent, {
         { path: 'ledgers', loadComponent: () => import('./app/components/ledgers/ledgers.component').then(m => m.LedgersComponent) },
         { path: 'chart-of-accounts', loadComponent: () => import('./app/components/chart-of-accounts/chart-of-accounts.component').then(m => m.ChartOfAccountsComponent) },
         { path: '**', redirectTo: '/dashboard' }
-      ])
+      ], { useHash: true })
     )
   ]
 }).catch(err => console.error(err));

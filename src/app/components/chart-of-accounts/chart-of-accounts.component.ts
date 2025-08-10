@@ -21,18 +21,21 @@ import { Observable } from 'rxjs';
             <option *ngFor="let c of classOptions" [value]="c">{{ c }}</option>
           </select>
           <label class="chk"><input type="checkbox" [(ngModel)]="exportFilteredOnly"/> N'exporter que le filtré</label>
+          <label class="chk"><input type="checkbox" [(ngModel)]="showAddedOnly" (change)="applyFilters()"/> Afficher uniquement ajoutés</label>
           <button class="btn" (click)="exportCsv()">⬇️ CSV</button>
           <button class="btn" (click)="exportExcel()">⬇️ Excel</button>
           <button class="btn" (click)="exportPdf()">⬇️ PDF</button>
           <!-- Boutons serveur (peuvent être retirés en version finale) -->
-          <button class="btn" title="Charger depuis le serveur" (click)="loadFromServer()">☁️ Charger</button>
-          <button class="btn" title="Sauvegarder vers le serveur" (click)="saveToServer()">☁️ Sauvegarder</button>
-          <div class="importer">
-            <a class="btn" [href]="coa.exportCsvFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ CSV</a>
-            <a class="btn" [href]="coa.exportXlsxFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ Excel</a>
-            <a class="btn" [href]="coa.exportPdfFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ PDF</a>
-            <input type="file" (change)="onImportServer($event)" accept=".json,.csv,.xlsx" />
-          </div>
+          <ng-container *ngIf="backendAvailable">
+            <button class="btn" title="Charger depuis le serveur" (click)="loadFromServer()">☁️ Charger</button>
+            <button class="btn" title="Sauvegarder vers le serveur" (click)="saveToServer()">☁️ Sauvegarder</button>
+            <div class="importer">
+              <a class="btn" [href]="coa.exportCsvFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ CSV</a>
+              <a class="btn" [href]="coa.exportXlsxFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ Excel</a>
+              <a class="btn" [href]="coa.exportPdfFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ PDF</a>
+              <input type="file" (change)="onImportServer($event)" accept=".json,.csv,.xlsx" />
+            </div>
+          </ng-container>
         </div>
       </div>
 
@@ -135,11 +138,11 @@ import { Observable } from 'rxjs';
   styles: [`
     .module-container { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
     .header-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-    .actions { display: flex; gap: 0.5rem; align-items: center; }
+    .actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .chk { color:#4a5568; font-size: 0.9rem; }
     .search { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; min-width: 260px; }
     .select { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; }
-    .btn { padding: 8px 12px; border: none; border-radius: 6px; background: #3182ce; color: #fff; cursor: pointer; }
+    .btn { padding: 8px 10px; border: none; border-radius: 6px; background: #3182ce; color: #fff; cursor: pointer; }
     .btn:hover { background: #2b6cb0; }
     .toolbar { display:flex; justify-content: space-between; align-items:center; margin:8px 0; flex-wrap:wrap; gap: 0.5rem; }
     .importer { display:flex; align-items:center; gap:0.5rem; }
@@ -156,7 +159,7 @@ import { Observable } from 'rxjs';
     .err { color:#e53e3e; font-size:0.9rem; }
     .ok { color:#38a169; font-size:0.9rem; }
     .toggle-icon { cursor:pointer; margin-right:6px; }
-    .inline { padding:4px 6px; border:1px solid #e2e8f0; border-radius:4px; margin: 0 6px; }
+    .inline { padding:4px 6px; border:1px solid #e2e8f0; border-radius:4px; margin: 0 6px; max-width: 380px; }
     .btn.small { padding: 4px 6px; font-size: 0.85rem; }
     .btn.small.danger { background:#e53e3e; }
     .children { margin-left: 1rem; }
@@ -178,6 +181,8 @@ export class ChartOfAccountsComponent implements OnInit {
   collapsedGroups: Record<string, boolean> = {};
 
   exportFilteredOnly = true;
+  showAddedOnly = false;
+  backendAvailable = false;
 
   // Import state
   importPreview: AccountPlanItem[] = [];
@@ -210,6 +215,8 @@ export class ChartOfAccountsComponent implements OnInit {
       this.applyFilters();
       this.rebuildTree();
     });
+    // Détection backend
+    this.coa.loadFromBackend().subscribe({ next: () => this.backendAvailable = true, error: () => this.backendAvailable = false });
   }
 
   normalizeClass(c?: string): string {
@@ -226,7 +233,8 @@ export class ChartOfAccountsComponent implements OnInit {
     const q = this.query.trim().toLowerCase();
     let items = this.allItems.filter(i =>
       (!q || i.code.toLowerCase().includes(q) || i.intitule.toLowerCase().includes(q)) &&
-      (!this.selectedClass || i.classe === this.selectedClass)
+      (!this.selectedClass || i.classe === this.selectedClass) &&
+      (!this.showAddedOnly || !this.lockedCodes.has(i.code))
     );
     items = this.sortItems(items);
 
@@ -253,7 +261,8 @@ export class ChartOfAccountsComponent implements OnInit {
   }
 
   compareCode(a: string, b: string): number {
-    // Compare par longueur puis lexicographique pour respecter l’ordre du plan
+    const ca = a.charAt(0), cb = b.charAt(0);
+    if (ca !== cb) return ca.localeCompare(cb, 'fr', { numeric: true });
     if (a.length !== b.length) return a.length - b.length;
     return a.localeCompare(b, 'fr', { numeric: true });
   }

@@ -24,15 +24,15 @@ WORKDIR /app
 # Copie des fichiers de dépendances
 COPY package*.json ./
 
-# Installation des dépendances avec optimisations
-RUN npm ci --only=production --legacy-peer-deps && \
+# Installation des dépendances avec optimisations (inclure devDependencies pour build Angular)
+RUN npm ci --legacy-peer-deps && \
     npm cache clean --force
 
 # Copie du code source
 COPY . .
 
 # Build de production optimisé
-RUN npm run build:prod
+RUN npm run build
 
 # ===================================================
 # STAGE 2: RUNTIME NGINX
@@ -54,7 +54,7 @@ COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/default.conf /etc/nginx/conf.d/default.conf
 
 # Copie des fichiers buildés depuis le stage précédent
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/dist/e-compta-ia/ /usr/share/nginx/html/
 
 # Copie des scripts de démarrage
 COPY docker/entrypoint.sh /entrypoint.sh

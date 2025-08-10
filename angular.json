@@ -26,6 +26,20 @@
             }
           },
           "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "browserTarget": "e-compta-ia:build"
+          },
+          "configurations": {
+            "development": {
+              "browserTarget": "e-compta-ia:build:development"
+            },
+            "production": {
+              "browserTarget": "e-compta-ia:build:production"
+            }
+          }
         }
       }
     }

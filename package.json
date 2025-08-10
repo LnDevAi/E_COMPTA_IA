@@ -2,6 +2,8 @@
   "name": "e-compta-ia",
   "version": "1.0.0",
   "scripts": {
+    "start": "ng serve --host 0.0.0.0 --port 4200",
+    "serve": "ng serve",
     "build": "ng build --configuration production"
   },
   "dependencies": {
@@ -11,6 +13,8 @@
     "@angular/common": "^17.0.0",
     "@angular/compiler": "^17.0.0",
     "@angular/router": "^17.0.0",
+    "@angular/forms": "^17.0.0",
+    "@angular/animations": "^17.0.0",
     "zone.js": "~0.14.0",
     "typescript": "~5.4.0"
   },

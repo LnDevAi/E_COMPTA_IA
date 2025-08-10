@@ -84,7 +84,6 @@ import { Observable } from 'rxjs';
         <div *ngFor="let group of groupedKeys()" class="group-block">
           <div class="group-title" (click)="toggleGroup(group)">
             <span>{{ group }}</span>
-            <span class="count">{{ grouped[group]?.length }} comptes</span>
             <span class="toggle">{{ collapsedGroups[group] ? '➕' : '➖' }}</span>
           </div>
           <div *ngIf="!collapsedGroups[group]">

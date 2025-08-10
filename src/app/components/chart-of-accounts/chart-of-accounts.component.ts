@@ -26,16 +26,14 @@ import { Observable } from 'rxjs';
           <button class="btn" (click)="exportExcel()">⬇️ Excel</button>
           <button class="btn" (click)="exportPdf()">⬇️ PDF</button>
           <!-- Boutons serveur (peuvent être retirés en version finale) -->
-          <ng-container *ngIf="backendAvailable">
-            <button class="btn" title="Charger depuis le serveur" (click)="loadFromServer()">☁️ Charger</button>
-            <button class="btn" title="Sauvegarder vers le serveur" (click)="saveToServer()">☁️ Sauvegarder</button>
-            <div class="importer">
-              <a class="btn" [href]="coa.exportCsvFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ CSV</a>
-              <a class="btn" [href]="coa.exportXlsxFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ Excel</a>
-              <a class="btn" [href]="coa.exportPdfFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ PDF</a>
-              <input type="file" (change)="onImportServer($event)" accept=".json,.csv,.xlsx" />
-            </div>
-          </ng-container>
+          <button class="btn" title="Charger depuis le serveur" (click)="loadFromServer()">☁️ Charger</button>
+          <button class="btn" title="Sauvegarder vers le serveur" (click)="saveToServer()">☁️ Sauvegarder</button>
+          <div class="importer">
+            <a class="btn" [href]="coa.exportCsvFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ CSV</a>
+            <a class="btn" [href]="coa.exportXlsxFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ Excel</a>
+            <a class="btn" [href]="coa.exportPdfFromBackend(exportFilteredOnly, query, selectedClass)" target="_blank">☁️ PDF</a>
+            <input type="file" (change)="onImportServer($event)" accept=".json,.csv,.xlsx" />
+          </div>
         </div>
       </div>
 
@@ -441,7 +439,7 @@ export class ChartOfAccountsComponent implements OnInit {
     // classe du nouveau = classe du parent
     const parentItem = this.allItems.find(i => i.code === parent);
     const classe = parentItem ? parentItem.classe : this.normalizeClass(this.classFromCode(code));
-    this.allItems = this.sortItems([...this.allItems, { code, intitule: label, classe }]);
+    this.allItems = this.sortItems([...this.allItems, { code, intitule: label, classe, locked: false }]);
     this.parentCode = this.newCode = this.newLabel = '';
     this.addSuccess = 'Sous-compte ajouté';
     this.applyFilters();

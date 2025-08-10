@@ -31,6 +31,8 @@ bootstrapApplication(AppComponent, {
         { path: 'journals', loadComponent: () => import('./app/components/journals/journals.component').then(m => m.JournalsComponent) },
         { path: 'ledgers', loadComponent: () => import('./app/components/ledgers/ledgers.component').then(m => m.LedgersComponent) },
         { path: 'chart-of-accounts', loadComponent: () => import('./app/components/chart-of-accounts/chart-of-accounts.component').then(m => m.ChartOfAccountsComponent) },
+        { path: 'entries', loadComponent: () => import('./app/components/entries/entries.component').then(m => m.EntriesComponent) },
+        { path: 'ai-assistant', loadComponent: () => import('./app/components/ai-assistant/ai-assistant.component').then(m => m.AiAssistantComponent) },
         { path: '**', redirectTo: '/dashboard' }
       ], { useHash: true })
     )

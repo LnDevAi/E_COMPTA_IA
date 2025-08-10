@@ -9,6 +9,9 @@ export const environment = {
     cognitoDomain: 'auth.e-compta-ia.com'
   },
   
+  // Backend API
+  apiUrl: 'https://e-compta-ia-backend.dev',
+  
   // Configuration application
   app: {
     name: 'E-COMPTA-IA',

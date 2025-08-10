@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { PLAN_COMPTABLE_SYSCOHADA_BASE } from '../modules/plan-comptable/models/plan-comptable.model';
+import { PLAN_COMPTABLE_SYSCOHADA_COMPLET } from '../../assets/data/plan-syscohada-complet';
 
 export interface AccountPlanItem {
   code: string;
@@ -18,23 +19,25 @@ export class ChartOfAccountsService {
 
   constructor(private http: HttpClient) {}
 
-  // Source par défaut: plan complet via TS (PLAN_COMPTABLE_SYSCOHADA_BASE)
+  // Source par défaut: plan complet TS (override), fallback: base interne, puis JSON assets
   getPlan(): Observable<AccountPlanItem[]> {
-    return of(PLAN_COMPTABLE_SYSCOHADA_BASE).pipe(
-      map(list =>
-        list.map(item => ({
-          code: item.numero,
-          intitule: item.intitule,
-          classe: typeof item.classe === 'string' ? item.classe : String(item.classe),
-          parent: undefined,
-          nature: undefined
-        }))
-      )
+    return of(PLAN_COMPTABLE_SYSCOHADA_COMPLET as any).pipe(
+      map((list: any[]) => this.mapToAccountPlan(list)),
+      catchError(() => of(this.mapToAccountPlan(PLAN_COMPTABLE_SYSCOHADA_BASE as any)))
     );
   }
 
-  // Fallback éventuel: lecture JSON (non utilisé actuellement)
   getPlanFromAssets(): Observable<AccountPlanItem[]> {
     return this.http.get<AccountPlanItem[]>(this.planUrl);
+  }
+
+  private mapToAccountPlan(list: any[]): AccountPlanItem[] {
+    return list.map(item => ({
+      code: item.numero ?? item.code,
+      intitule: item.intitule,
+      classe: typeof item.classe === 'string' ? item.classe : String(item.classe),
+      parent: item.parent ?? undefined,
+      nature: item.nature ?? undefined
+    }));
   }
 }

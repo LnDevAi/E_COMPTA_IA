@@ -83,7 +83,7 @@ import { Observable } from 'rxjs';
       <div *ngIf="groupByClass; else flatTable">
         <div *ngFor="let group of groupedKeys()" class="group-block">
           <div class="group-title" (click)="toggleGroup(group)">
-            <span>{{ group }}</span>
+            <span>{{ classTitle(group) }}</span>
             <span class="toggle">{{ collapsedGroups[group] ? '➕' : '➖' }}</span>
           </div>
           <div *ngIf="!collapsedGroups[group]">
@@ -536,6 +536,13 @@ export class ChartOfAccountsComponent implements OnInit {
       input.value = '';
     });
   }
+
+  // Helper d’affichage de titre de classe
+  classTitle(group: string): string {
+    const m = group.match(/Classe\s*(\d)/);
+    const d = m ? m[1] : '?';
+    return syscohadaClassTitle(d);
+  }
 }
 
 interface TreeNode {
@@ -547,3 +554,21 @@ interface TreeNode {
   locked: boolean;
   children: TreeNode[];
 }
+
+// Helpers d'intitulés de classes SYSCOHADA
+function syscohadaClassTitle(digit: string): string {
+  const map: Record<string,string> = {
+    '1': 'Classe 1 — Comptes de ressources durables',
+    '2': 'Classe 2 — Comptes d\'actif immobilisé',
+    '3': 'Classe 3 — Comptes de stocks',
+    '4': 'Classe 4 — Comptes de tiers',
+    '5': 'Classe 5 — Comptes de trésorerie',
+    '6': 'Classe 6 — Comptes de charges',
+    '7': 'Classe 7 — Comptes de produits',
+    '8': 'Classe 8 — Autres charges et produits (HAO)',
+    '9': 'Classe 9 — Engagements obtenus et accordés'
+  };
+  return map[digit] || `Classe ${digit}`;
+}
+
+// (fin helpers)

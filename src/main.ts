@@ -4,6 +4,11 @@ import { importProvidersFrom } from '@angular/core';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
+
+registerLocaleData(localeFr);
 
 // Configuration Amplify (sera ajoutée plus tard)
 // import { Amplify } from 'aws-amplify';
@@ -12,10 +17,11 @@ import { HttpClientModule } from '@angular/common/http';
 
 bootstrapApplication(AppComponent, {
   providers: [
+    { provide: LOCALE_ID, useValue: 'fr-FR' },
     importProvidersFrom(
-                    BrowserAnimationsModule,
-              HttpClientModule,
-                    RouterModule.forRoot([
+      BrowserAnimationsModule,
+      HttpClientModule,
+      RouterModule.forRoot([
         { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
         { path: 'dashboard', loadComponent: () => import('./app/components/dashboard/dashboard.component').then(m => m.DashboardComponent) },
         { path: 'bank-reconciliation', loadComponent: () => import('./app/components/bank-reconciliation/bank-reconciliation.component').then(m => m.BankReconciliationComponent) },

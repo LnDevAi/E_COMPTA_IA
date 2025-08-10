@@ -21,6 +21,9 @@ import { BankReconciliationComponent } from './components/bank-reconciliation/ba
             <a class="nav-btn" routerLink="/dashboard" routerLinkActive="active">📊 Tableau de Bord</a>
             <a class="nav-btn" routerLink="/bank-reconciliation" routerLinkActive="active">🏦 Rapprochements</a>
             <a class="nav-btn" routerLink="/financial-statements" routerLinkActive="active">📈 États Financiers</a>
+            <a class="nav-btn" routerLink="/journals" routerLinkActive="active">📓 Journaux</a>
+            <a class="nav-btn" routerLink="/ledgers" routerLinkActive="active">📚 Grands livres</a>
+            <a class="nav-btn" routerLink="/chart-of-accounts" routerLinkActive="active">🧾 Plan comptable</a>
             <a class="nav-btn" routerLink="/tax-declarations" routerLinkActive="active">📋 Déclarations</a>
             <a class="nav-btn enterprise" routerLink="/enterprise" routerLinkActive="active">🏢 Entreprise</a>
           </nav>

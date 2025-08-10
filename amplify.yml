@@ -1,0 +1,37 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "🚀 E-COMPTA-IA - Build Production"
+        - npm install
+    build:
+      commands:
+        - echo "🏗️ Angular Build..."
+        - npm run build
+        - echo "✅ Build terminé avec succès"
+        - ls -la dist/e-compta-ia/
+  artifacts:
+    baseDirectory: dist/e-compta-ia
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+customHeaders:
+  - pattern: '**'
+    headers:
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'X-Frame-Options'
+        value: 'DENY'
+      - key: 'Cache-Control'
+        value: 'no-cache, no-store, must-revalidate'
+  - pattern: '/assets/**'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+redirects:
+  - source: '/<*>'
+    target: '/index.html'
+    status: 200

@@ -1,0 +1,101 @@
+{
+  "titre": "Code Général des Impôts Burkina Faso 2024",
+  "categorie": "reglementaire",
+  "domaine": "fiscal",
+  "pays": ["BF"],
+  "datePublication": "2024-01-01",
+  "dateValidite": "2024-12-31",
+  "source": "Direction Générale des Impôts - Burkina Faso",
+  "fiabilite": "officielle",
+  "version": "2024.1",
+  
+  "mots_cles": [
+    "burkina faso", "code general impots", "CGI", "BF", "fiscal", "2024",
+    "impot sur societes", "TVA", "IRPP", "impot revenus", "procedures fiscales",
+    "sanctions", "contentieux", "declarations", "paiements", "exonerations",
+    "taux imposition", "bases imposables", "deductions", "credits impot"
+  ],
+  
+  "resume": "Code Général des Impôts du Burkina Faso pour l'année 2024, comprenant l'ensemble de la réglementation fiscale applicable aux personnes physiques et morales.",
+  
+  "langues": ["fr"],
+  
+  "contenu_principal": {
+    "livre_1": "Impôts sur les revenus et bénéfices",
+    "livre_2": "Impôts et taxes sur le chiffre d'affaires", 
+    "livre_3": "Autres impôts et taxes",
+    "livre_4": "Procédures fiscales",
+    "livre_5": "Contentieux fiscal",
+    "livre_6": "Sanctions et pénalités"
+  },
+  
+  "thematiques_couvertes": [
+    "Impôt sur les Traitements et Salaires (ITS)",
+    "Impôt sur les Bénéfices Industriels et Commerciaux (IBIC)", 
+    "Impôt sur les Bénéfices Non Commerciaux (IBNC)",
+    "Taxe sur la Valeur Ajoutée (TVA)",
+    "Taxe Spécifique sur certains produits (TSP)",
+    "Contribution du secteur informel (CSI)",
+    "Impôt foncier",
+    "Droits d'enregistrement",
+    "Procédures de contrôle fiscal",
+    "Régimes d'imposition",
+    "Exonérations et incitations fiscales"
+  ],
+  
+  "taux_principaux_2024": {
+    "TVA_taux_normal": "18%",
+    "TVA_taux_reduit": "9%", 
+    "IBIC_taux_normal": "27.5%",
+    "IBIC_taux_reduit_PME": "25%",
+    "ITS_bareme": "progressif jusqu'à 30%",
+    "TSP_carburants": "variables selon produit"
+  },
+  
+  "utilisation_recommandee": [
+    "Calcul des impôts et taxes",
+    "Vérification de la conformité fiscale",
+    "Préparation des déclarations",
+    "Formation en fiscalité burkinabè",
+    "Conseils aux entreprises",
+    "Recherche académique en droit fiscal"
+  ],
+  
+  "mise_a_jour": {
+    "derniere_modification": "2024-01-01",
+    "prochaine_revision": "2025-01-01",
+    "changelog": "Nouvelle version 2024 avec révisions tarifaires"
+  },
+  
+  "complementaires_suggeres": [
+    "Loi de finances 2024 Burkina Faso",
+    "Arrêtés d'application fiscaux 2024",
+    "Guide pratique fiscalité BF 2024",
+    "Formulaires de déclaration 2024"
+  ],
+  
+  "niveau_priorite": "haute",
+  "frequence_consultation_estimee": "tres_elevee",
+  
+  "compatibilite_ia": {
+    "indexation_complete": true,
+    "extraction_taux": true,
+    "generation_exemples": true,
+    "calculs_automatiques": true,
+    "comparaison_autres_pays": true
+  },
+  
+  "contact_source": {
+    "organisme": "Direction Générale des Impôts du Burkina Faso",
+    "site_web": "www.impots.gov.bf",
+    "telephone": "+226 25 xx xx xx",
+    "adresse": "Ouagadougou, Burkina Faso"
+  },
+  
+  "notes_techniques": [
+    "Document officiel publié au Journal Officiel",
+    "Applicable à partir du 1er janvier 2024",
+    "Remplace les versions antérieures",
+    "Texte de référence pour tous les contribuables"
+  ]
+}

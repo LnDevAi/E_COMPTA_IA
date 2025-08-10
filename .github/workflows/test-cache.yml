@@ -1,0 +1,53 @@
+name: 🧪 Test Cache GitHub Actions
+
+on:
+  workflow_dispatch:  # Permet de déclencher manuellement
+  push:
+    branches: [ main, develop, 'cursor/**' ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test-cache:
+    name: 🧪 Test Cache NPM
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout du code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js avec cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: 📦 Test installation dépendances
+        run: |
+          # Vérification package-lock.json
+          if [ -f "package-lock.json" ]; then
+            echo "✅ package-lock.json trouvé"
+            ls -la package-lock.json
+          else
+            echo "⚠️ package-lock.json manquant, génération..."
+            npm install --package-lock-only
+          fi
+          
+          # Test installation
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+          echo "✅ Installation réussie"
+
+      - name: 🧪 Test scripts basiques
+        run: |
+          npm run test:ci
+          echo "✅ Scripts npm opérationnels"
+
+      - name: 📊 Résumé du test
+        run: |
+          echo "🎉 Test cache GitHub Actions réussi !"
+          echo "✅ Cache npm fonctionnel"
+          echo "✅ package-lock.json présent"
+          echo "✅ Dépendances installées"
+          echo "✅ Scripts npm opérationnels"

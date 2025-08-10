@@ -1,0 +1,39 @@
+name: Build artifact (dist)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main, fix/local-run ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Angular
+        run: |
+          npx ng build --configuration production
+          cp dist/e-compta-ia/index.html dist/e-compta-ia/404.html
+
+      - name: Zip dist
+        run: |
+          cd dist
+          zip -r e-compta-ia.zip e-compta-ia
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e-compta-ia-dist
+          path: dist/e-compta-ia.zip
+          retention-days: 7

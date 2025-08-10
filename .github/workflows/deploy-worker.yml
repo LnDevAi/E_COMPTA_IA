@@ -1,0 +1,48 @@
+name: Deploy Cloudflare Worker
+
+on:
+  push:
+    branches: [ main, fix/local-run ]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Angular
+        run: |
+          npx ng build --configuration production
+          cp dist/e-compta-ia/index.html dist/e-compta-ia/404.html
+
+      - name: Install Wrangler
+        run: npm i -g wrangler
+
+      - name: Configure Wrangler Secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          BASIC_AUTH_USER: ${{ secrets.BASIC_AUTH_USER }}
+          BASIC_AUTH_PASS: ${{ secrets.BASIC_AUTH_PASS }}
+        run: |
+          # Export worker secrets for Basic Auth
+          wrangler secret put BASIC_AUTH_USER --text "$BASIC_AUTH_USER"
+          wrangler secret put BASIC_AUTH_PASS --text "$BASIC_AUTH_PASS"
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          wrangler deploy

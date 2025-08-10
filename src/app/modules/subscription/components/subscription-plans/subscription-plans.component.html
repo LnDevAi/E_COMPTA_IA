@@ -1,0 +1,544 @@
+<!-- =====================================================
+     INTERFACE PLANS D'ABONNEMENT E-COMPTA-IA
+     Interface moderne avec Mobile Money & tarification dynamique
+     ===================================================== -->
+
+<div class="subscription-container">
+  
+  <!-- Header et navigation des étapes -->
+  <div class="subscription-header">
+    <div class="steps-nav">
+      <div class="step" [class.active]="etapeActuelle === 'plans'" [class.completed]="etapeActuelle !== 'plans'">
+        <div class="step-icon">📦</div>
+        <div class="step-label">Choisir un plan</div>
+      </div>
+      <div class="step-separator"></div>
+      <div class="step" [class.active]="etapeActuelle === 'paiement'" [class.completed]="etapeActuelle === 'confirmation'">
+        <div class="step-icon">💳</div>
+        <div class="step-label">Paiement</div>
+      </div>
+      <div class="step-separator"></div>
+      <div class="step" [class.active]="etapeActuelle === 'confirmation'">
+        <div class="step-icon">✅</div>
+        <div class="step-label">Confirmation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- ÉTAPE 1: SÉLECTION DES PLANS -->
+  <!-- ===================================================== -->
+  <div class="plans-section" *ngIf="etapeActuelle === 'plans'">
+    
+    <!-- Toggle période mensuel/annuel -->
+    <div class="billing-toggle-container">
+      <h2 class="section-title">Choisissez votre plan d'abonnement</h2>
+      <p class="section-subtitle">Des solutions adaptées à tous les besoins comptables</p>
+      
+      <div class="billing-toggle">
+        <button 
+          type="button"
+          [class.active]="periodeAffichage === 'mensuel'"
+          (click)="periodeAffichage = 'mensuel'">
+          📅 Mensuel
+        </button>
+        <button 
+          type="button"
+          [class.active]="periodeAffichage === 'annuel'"
+          (click)="periodeAffichage = 'annuel'">
+          🗓️ Annuel
+          <span class="badge">Économisez 17%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chargement -->
+    <div class="loading-container" *ngIf="chargement">
+      <div class="loading-spinner"></div>
+      <p>Chargement des plans disponibles pour {{ paysUtilisateur }}...</p>
+    </div>
+
+    <!-- Erreur -->
+    <div class="error-container" *ngIf="erreur">
+      <div class="error-icon">❌</div>
+      <h3>Erreur de chargement</h3>
+      <p>{{ erreur }}</p>
+      <button class="btn btn-secondary" (click)="chargerDonnees()">
+        🔄 Réessayer
+      </button>
+    </div>
+
+    <!-- Grille des plans -->
+    <div class="plans-grid" *ngIf="!chargement && !erreur">
+      <div 
+        class="plan-card" 
+        *ngFor="let plan of plansDisponibles"
+        [ngClass]="obtenirClassePlan(plan)"
+        (click)="selectionnerPlan(plan)">
+        
+        <!-- Badge populaire -->
+        <div class="plan-badge" *ngIf="estPlanPopulaire(plan)">
+          ⭐ Le plus populaire
+        </div>
+
+        <!-- Header du plan -->
+        <div class="plan-header">
+          <div class="plan-icon">{{ plan.icone }}</div>
+          <h3 class="plan-name">{{ plan.nom }}</h3>
+          <p class="plan-description">{{ plan.description }}</p>
+        </div>
+
+        <!-- Prix -->
+        <div class="plan-pricing">
+          <div class="price-main">
+            <span class="price-amount">
+              {{ formatMontant(obtenirPrixAffiche(plan), obtenirDeviseAffichee(plan)) }}
+            </span>
+            <span class="price-period" *ngIf="plan.prixMensuel > 0">
+              /{{ periodeAffichage === 'mensuel' ? 'mois' : 'an' }}
+            </span>
+          </div>
+          
+          <!-- Économies pour plan annuel -->
+          <div class="price-savings" *ngIf="periodeAffichage === 'annuel' && plan.prixMensuel > 0">
+            💰 Économisez {{ plan.reductionAnnuelle }}% sur l'année
+          </div>
+          
+          <!-- Prix gratuit -->
+          <div class="price-free" *ngIf="plan.prixMensuel === 0">
+            🎉 Gratuit pour toujours
+          </div>
+        </div>
+
+        <!-- Fonctionnalités -->
+        <div class="plan-features">
+          <div class="feature-item" *ngFor="let fonctionnalite of plan.fonctionnalites">
+            <div class="feature-icon">✅</div>
+            <div class="feature-text">
+              <strong>{{ fonctionnalite.nom }}</strong>
+              <br>
+              <small>{{ fonctionnalite.description }}</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Limites importantes -->
+        <div class="plan-limits" *ngIf="plan.limites">
+          <div class="limit-item" *ngIf="plan.limites.nombreEcritures !== -1">
+            📝 {{ plan.limites.nombreEcritures }} écritures/mois
+          </div>
+          <div class="limit-item" *ngIf="plan.limites.nombreEcritures === -1">
+            📝 Écritures illimitées
+          </div>
+          <div class="limit-item" *ngIf="plan.limites.espaceStockage !== -1">
+            💾 {{ plan.limites.espaceStockage }} GB de stockage
+          </div>
+          <div class="limit-item" *ngIf="plan.limites.espaceStockage === -1">
+            💾 Stockage illimité
+          </div>
+        </div>
+
+        <!-- Bouton de sélection -->
+        <div class="plan-action">
+          <button 
+            class="btn btn-plan"
+            [class.btn-primary]="estPlanPopulaire(plan)"
+            [class.btn-secondary]="!estPlanPopulaire(plan)">
+            <span *ngIf="plan.prixMensuel === 0">🚀 Commencer gratuitement</span>
+            <span *ngIf="plan.prixMensuel > 0">💳 Choisir ce plan</span>
+          </button>
+        </div>
+
+        <!-- Méthodes de paiement supportées -->
+        <div class="plan-payment-methods" *ngIf="plan.prixMensuel > 0">
+          <div class="payment-method-icons">
+            <span *ngFor="let methode of methodesDisponibles" [title]="methode">
+              {{ obtenirIconeMethodePaiement(methode) }}
+            </span>
+          </div>
+          <small>Paiements sécurisés</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informations additionnelles -->
+    <div class="additional-info" *ngIf="!chargement && !erreur">
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-icon">🔒</div>
+          <h4>Sécurisé</h4>
+          <p>Tous les paiements sont cryptés et sécurisés selon les standards bancaires</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">🌍</div>
+          <h4>Multi-pays</h4>
+          <p>Support de {{ paysUtilisateur }} avec tarification locale et devises régionales</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">📱</div>
+          <h4>Mobile Money</h4>
+          <p>Support natif des opérateurs locaux pour faciliter vos paiements</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon">🔄</div>
+          <h4>Flexible</h4>
+          <p>Changez de plan à tout moment selon l'évolution de vos besoins</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- ÉTAPE 2: PAIEMENT -->
+  <!-- ===================================================== -->
+  <div class="payment-section" *ngIf="etapeActuelle === 'paiement'" [formGroup]="paiementForm">
+    
+    <div class="payment-header">
+      <button class="btn btn-back" (click)="retourPlans()">
+        ← Retour aux plans
+      </button>
+      <h2>Finaliser votre abonnement</h2>
+    </div>
+
+    <!-- Résumé du plan sélectionné -->
+    <div class="plan-summary" *ngIf="planSelectionne">
+      <div class="summary-card">
+        <div class="summary-icon">{{ planSelectionne.icone }}</div>
+        <div class="summary-details">
+          <h3>{{ planSelectionne.nom }}</h3>
+          <p>{{ planSelectionne.description }}</p>
+          <div class="summary-price">
+            {{ formatMontant(obtenirPrixAffiche(planSelectionne), obtenirDeviseAffichee(planSelectionne)) }}
+            <span>/{{ periodeAffichage === 'mensuel' ? 'mois' : 'an' }}</span>
+          </div>
+        </div>
+        <div class="summary-badge" *ngIf="planSelectionne.populaire">
+          ⭐ Populaire
+        </div>
+      </div>
+    </div>
+
+    <!-- Sélection méthode de paiement -->
+    <div class="payment-methods">
+      <h3>Choisissez votre méthode de paiement</h3>
+      
+      <div class="method-grid">
+        <div 
+          class="method-card"
+          *ngFor="let methode of methodesDisponibles"
+          [class.selected]="methodePaiementSelectionnee === methode"
+          (click)="paiementForm.patchValue({typePaiement: methode})">
+          
+          <div class="method-icon">{{ obtenirIconeMethodePaiement(methode) }}</div>
+          <div class="method-name">{{ obtenirNomMethodePaiement(methode) }}</div>
+          
+          <!-- Indicateurs spéciaux -->
+          <div class="method-badges">
+            <span class="badge-instant" *ngIf="methode === 'mobile_money'">Instantané</span>
+            <span class="badge-secure" *ngIf="methode === 'carte_credit'">Sécurisé</span>
+            <span class="badge-popular" *ngIf="methode === 'paypal'">Populaire</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaires de paiement spécifiques -->
+    <div class="payment-forms">
+      
+      <!-- Carte de crédit -->
+      <div class="payment-form" *ngIf="methodePaiementSelectionnee === 'carte_credit'">
+        <h4>💳 Informations de carte</h4>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Numéro de carte</label>
+            <input 
+              type="text" 
+              formControlName="numeroCarte" 
+              placeholder="1234 5678 9012 3456"
+              maxlength="19">
+            <div class="error-message" *ngIf="obtenirMessageErreur('numeroCarte')">
+              {{ obtenirMessageErreur('numeroCarte') }}
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Date d'expiration</label>
+            <input 
+              type="text" 
+              formControlName="dateExpiration" 
+              placeholder="MM/AA"
+              maxlength="5">
+          </div>
+          <div class="form-group">
+            <label>CVV</label>
+            <input 
+              type="text" 
+              formControlName="cvv" 
+              placeholder="123"
+              maxlength="3">
+          </div>
+          <div class="form-group full-width">
+            <label>Nom du porteur</label>
+            <input 
+              type="text" 
+              formControlName="nomPorteur" 
+              placeholder="Jean Dupont">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Money -->
+      <div class="payment-form" *ngIf="methodePaiementSelectionnee === 'mobile_money'">
+        <h4>📱 Paiement Mobile Money</h4>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Opérateur Mobile Money</label>
+            <select formControlName="operateurMM">
+              <option value="">Sélectionnez votre opérateur</option>
+              <option *ngFor="let operateur of operateursMobileMoney" [value]="operateur">
+                {{ obtenirLabelOperateurMM(operateur) }}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Numéro de téléphone</label>
+            <input 
+              type="tel" 
+              formControlName="numeroTelephone" 
+              placeholder="+225 XX XX XX XX">
+          </div>
+          <div class="form-group">
+            <label>Nom du titulaire</label>
+            <input 
+              type="text" 
+              formControlName="nomTitulaireMM" 
+              placeholder="Jean Dupont">
+          </div>
+        </div>
+        
+        <!-- Info Mobile Money -->
+        <div class="payment-info">
+          <div class="info-icon">💡</div>
+          <div class="info-text">
+            <p><strong>Paiement instantané et sécurisé</strong></p>
+            <p>Vous recevrez un SMS de confirmation pour valider le paiement via votre opérateur.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PayPal -->
+      <div class="payment-form" *ngIf="methodePaiementSelectionnee === 'paypal'">
+        <h4>💙 Paiement PayPal</h4>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Email PayPal</label>
+            <input 
+              type="email" 
+              formControlName="emailPayPal" 
+              placeholder="votre@email.com">
+          </div>
+        </div>
+        
+        <div class="payment-info">
+          <div class="info-icon">💙</div>
+          <div class="info-text">
+            <p><strong>Paiement sécurisé via PayPal</strong></p>
+            <p>Vous serez redirigé vers PayPal pour finaliser le paiement en toute sécurité.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Virement bancaire -->
+      <div class="payment-form" *ngIf="methodePaiementSelectionnee === 'virement_bancaire'">
+        <h4>🏦 Virement bancaire</h4>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>IBAN</label>
+            <input 
+              type="text" 
+              formControlName="iban" 
+              placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX">
+          </div>
+          <div class="form-group">
+            <label>BIC/SWIFT (optionnel)</label>
+            <input 
+              type="text" 
+              formControlName="bic" 
+              placeholder="XXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label>Nom du titulaire</label>
+            <input 
+              type="text" 
+              formControlName="nomTitulaireVirement" 
+              placeholder="Jean Dupont">
+          </div>
+        </div>
+        
+        <div class="payment-info">
+          <div class="info-icon">⏰</div>
+          <div class="info-text">
+            <p><strong>Délai de traitement: 1-2 jours ouvrés</strong></p>
+            <p>Vous recevrez les instructions de virement par email après validation.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code promo -->
+    <div class="promo-section">
+      <div class="form-group">
+        <label>Code promotionnel (optionnel)</label>
+        <div class="promo-input">
+          <input 
+            type="text" 
+            formControlName="codePromo" 
+            placeholder="Entrez votre code promo">
+          <button type="button" class="btn btn-outline">Appliquer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conditions et newsletter -->
+    <div class="conditions-section">
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="accepterConditions">
+          <span class="checkmark"></span>
+          J'accepte les <a href="/conditions" target="_blank">conditions d'utilisation</a> et la 
+          <a href="/privacy" target="_blank">politique de confidentialité</a>
+        </label>
+      </div>
+      
+      <div class="checkbox-group">
+        <label class="checkbox-label">
+          <input type="checkbox" formControlName="accepterNewsletter">
+          <span class="checkmark"></span>
+          Je souhaite recevoir les actualités et conseils comptables par email
+        </label>
+      </div>
+    </div>
+
+    <!-- Bouton de paiement -->
+    <div class="payment-action">
+      <button 
+        type="button"
+        class="btn btn-primary btn-large"
+        [disabled]="!estFormulairePaiementValide() || traitementPaiement"
+        (click)="traiterPaiement()">
+        
+        <span *ngIf="!traitementPaiement">
+          🔒 Finaliser le paiement
+          <span *ngIf="planSelectionne">
+            ({{ formatMontant(obtenirPrixAffiche(planSelectionne), obtenirDeviseAffichee(planSelectionne)) }})
+          </span>
+        </span>
+        
+        <span *ngIf="traitementPaiement">
+          <div class="loading-spinner small"></div>
+          Traitement en cours...
+        </span>
+      </button>
+      
+      <p class="payment-security">
+        🔒 Paiement 100% sécurisé • Cryptage SSL • Données protégées
+      </p>
+    </div>
+  </div>
+
+  <!-- ===================================================== -->
+  <!-- ÉTAPE 3: CONFIRMATION -->
+  <!-- ===================================================== -->
+  <div class="confirmation-section" *ngIf="etapeActuelle === 'confirmation'">
+    
+    <!-- Succès -->
+    <div class="confirmation-success" *ngIf="resultaPaiement?.succes">
+      <div class="success-icon">🎉</div>
+      <h2>Félicitations !</h2>
+      <p class="success-message">{{ resultaPaiement.message }}</p>
+      
+      <!-- Détails de l'abonnement -->
+      <div class="subscription-details" *ngIf="resultaPaiement.abonnement">
+        <div class="detail-card">
+          <h3>Votre abonnement {{ resultaPaiement.abonnement.plan.nom }}</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Plan:</span>
+              <span class="detail-value">{{ resultaPaiement.abonnement.plan.nom }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Statut:</span>
+              <span class="detail-value status-active">{{ resultaPaiement.abonnement.statut }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Période:</span>
+              <span class="detail-value">{{ resultaPaiement.abonnement.periodeFacturation }}</span>
+            </div>
+            <div class="detail-item" *ngIf="resultaPaiement.abonnement.dateFinEssai">
+              <span class="detail-label">Fin de l'essai:</span>
+              <span class="detail-value">{{ resultaPaiement.abonnement.dateFinEssai | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Prochaine facturation:</span>
+              <span class="detail-value">{{ resultaPaiement.abonnement.prochaineFacturation | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prochaines étapes -->
+      <div class="next-steps">
+        <h3>Prochaines étapes</h3>
+        <div class="steps-list">
+          <div class="step-item">
+            <div class="step-number">1</div>
+            <div class="step-content">
+              <h4>Configurez votre entreprise</h4>
+              <p>Complétez les informations de votre entreprise et choisissez vos paramètres comptables</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">2</div>
+            <div class="step-content">
+              <h4>Importez vos données</h4>
+              <p>Transférez vos données existantes ou commencez avec un plan comptable vierge</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-number">3</div>
+            <div class="step-content">
+              <h4>Explorez les fonctionnalités</h4>
+              <p>Découvrez tous les outils comptables et l'assistant IA pour optimiser votre travail</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="confirmation-actions">
+        <button class="btn btn-primary btn-large" (click)="terminerProcessus()">
+          🚀 Accéder à mon espace
+        </button>
+        <button class="btn btn-outline" (click)="router.navigate(['/help'])">
+          📚 Guide de démarrage
+        </button>
+      </div>
+    </div>
+
+    <!-- Erreur -->
+    <div class="confirmation-error" *ngIf="!resultaPaiement?.succes">
+      <div class="error-icon">❌</div>
+      <h2>Erreur de paiement</h2>
+      <p class="error-message">{{ resultaPaiement?.erreur || 'Une erreur est survenue' }}</p>
+      
+      <div class="error-actions">
+        <button class="btn btn-primary" (click)="retourPlans()">
+          🔄 Réessayer
+        </button>
+        <button class="btn btn-outline" (click)="router.navigate(['/support'])">
+          💬 Contacter le support
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,60 @@
+MIT License
+
+Copyright (c) 2024 E-COMPTA-IA Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Additional Terms for Commercial Use
+
+### SYSCOHADA Compliance Notice
+This software is designed to comply with SYSCOHADA (Organisation pour l'Harmonisation 
+en Afrique du Droit des Affaires) accounting standards. Users are responsible for 
+ensuring that their use of this software complies with local regulations and 
+accounting standards in their respective jurisdictions.
+
+### Attribution Requirements
+When using this software in a commercial environment, please include attribution 
+to the E-COMPTA-IA project in your application's about section or documentation.
+
+### Trademark Notice
+"E-COMPTA-IA" is a trademark of the E-COMPTA-IA Team. Use of the trademark is 
+subject to separate trademark license terms.
+
+### Support and Liability
+This software is provided without warranty. For commercial support, professional 
+services, and liability coverage, please contact: support@e-compta-ia.com
+
+### Data Protection
+Users must ensure compliance with applicable data protection laws (including but 
+not limited to GDPR, local privacy laws) when processing personal or financial 
+data through this software.
+
+### Open Source Components
+This software may include open source components with their own licenses. 
+See the NOTICE file for details of included third-party software.
+
+### Contributions
+By contributing to this project, you agree that your contributions will be 
+licensed under the same MIT License. See CONTRIBUTING.md for contribution guidelines.
+
+---
+
+For questions about this license, please contact: legal@e-compta-ia.com

@@ -1,0 +1,39 @@
+name: Deploy to Cloudflare Pages (private)
+
+on:
+  push:
+    branches:
+      - main
+      - fix/local-run
+  workflow_dispatch: {}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Angular
+        run: |
+          npx ng build --configuration production
+          # SPA fallback (optional)
+          cp dist/e-compta-ia/index.html dist/e-compta-ia/404.html || true
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: e-compta-ia
+          directory: dist/e-compta-ia
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

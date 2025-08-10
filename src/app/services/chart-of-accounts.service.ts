@@ -18,19 +18,9 @@ export class ChartOfAccountsService {
 
   constructor(private http: HttpClient) {}
 
-  // Lit depuis la source TS (plan complet intégré au dépôt)
+  // Source par défaut: JSON dans assets (modifiable sans rebuild)
   getPlan(): Observable<AccountPlanItem[]> {
-    return of(PLAN_COMPTABLE_SYSCOHADA_BASE).pipe(
-      map(list =>
-        list.map(item => ({
-          code: item.numero,
-          intitule: item.intitule,
-          classe: typeof item.classe === 'string' ? item.classe : String(item.classe),
-          parent: undefined,
-          nature: undefined
-        }))
-      )
-    );
+    return this.getPlanFromAssets();
   }
 
   // Fallback éventuel: lecture JSON (non utilisé actuellement)

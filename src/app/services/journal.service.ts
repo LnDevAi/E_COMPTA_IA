@@ -70,6 +70,18 @@ export class JournalService {
     this.ecritures$.next(this.ecritures$.value.filter(x => x.id !== id));
   }
 
+  getEcriture(id: string): Ecriture | undefined {
+    return this.ecritures$.value.find(x => x.id === id);
+  }
+
+  updateEcriture(updated: Ecriture) {
+    const totalDebit = updated.lignes.reduce((s,l)=>s+(Number(l.debit)||0),0);
+    const totalCredit = updated.lignes.reduce((s,l)=>s+(Number(l.credit)||0),0);
+    if (Math.round((totalDebit-totalCredit)*100) !== 0) throw new Error('Écriture non équilibrée');
+    updated.totalDebit = totalDebit; updated.totalCredit = totalCredit;
+    this.ecritures$.next(this.ecritures$.value.map(e => e.id === updated.id ? { ...updated } : e));
+  }
+
   // Exports
   exportJournauxCsv(): Blob {
     const header = 'code;libelle;type';

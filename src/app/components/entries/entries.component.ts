@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { JournalService, Ecriture, EcritureLigne } from '../../services/journal.service';
+import { ChartOfAccountsService } from '../../services/chart-of-accounts.service';
 
 @Component({
   selector: 'app-entries',
@@ -34,7 +35,9 @@ import { JournalService, Ecriture, EcritureLigne } from '../../services/journal.
         <thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let l of lignes; let i = index">
-            <td><input class="input" [(ngModel)]="l.compte"/></td>
+            <td>
+              <input class="input" list="cpt" [(ngModel)]="l.compte" (change)="onCompteChange(l)"/>
+            </td>
             <td><input class="input" [(ngModel)]="l.libelle"/></td>
             <td><input class="input" type="number" step="0.01" [(ngModel)]="l.debit" (input)="recalc()"/></td>
             <td><input class="input" type="number" step="0.01" [(ngModel)]="l.credit" (input)="recalc()"/></td>
@@ -46,9 +49,32 @@ import { JournalService, Ecriture, EcritureLigne } from '../../services/journal.
           <tr><th colspan="2">Balance (doit être 0)</th><th colspan="2">{{ (totalDebit - totalCredit) | number:'1.2-2' }}</th><th></th></tr>
         </tfoot>
       </table>
+      <datalist id="cpt">
+        <option *ngFor="let c of comptes" [value]="c.code">{{ c.code }} - {{ c.intitule }}</option>
+      </datalist>
 
       <div *ngIf="error" class="err">{{ error }}</div>
       <div *ngIf="ok" class="ok">{{ ok }}</div>
+
+      <h2>Écritures enregistrées</h2>
+      <table class="table">
+        <thead><tr><th>ID</th><th>Date</th><th>Journal</th><th>Pièce</th><th>Réf</th><th>Débit</th><th>Crédit</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let e of ecritures">
+            <td>{{ e.id }}</td>
+            <td>{{ e.date }}</td>
+            <td>{{ e.journalCode }}</td>
+            <td>{{ e.piece }}</td>
+            <td>{{ e.reference }}</td>
+            <td>{{ e.totalDebit }}</td>
+            <td>{{ e.totalCredit }}</td>
+            <td>
+              <button class="btn" (click)="edit(e)">Modifier</button>
+              <button class="btn danger" (click)="del(e.id)">Supprimer</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   `,
   styles: [`
@@ -75,7 +101,14 @@ export class EntriesComponent {
   error = '';
   ok = '';
 
-  constructor(private js: JournalService) {}
+  comptes: { code: string; intitule: string }[] = [];
+  ecritures: Ecriture[] = [];
+  editingId: string | null = null;
+
+  constructor(private js: JournalService, private coa: ChartOfAccountsService) {
+    this.coa.getPlan().subscribe(p => this.comptes = p.map(i => ({ code: i.code, intitule: i.intitule })));
+    this.js.getEcritures().subscribe(list => this.ecritures = list);
+  }
 
   addLine() { this.lignes.push({ compte: '', libelle: '', debit: 0, credit: 0 }); }
   removeLine(i: number) { this.lignes.splice(i,1); this.recalc(); }
@@ -87,10 +120,17 @@ export class EntriesComponent {
   saveEntry() {
     this.error = this.ok = '';
     try {
-      this.js.addEcriture({ date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes: this.lignes });
-      this.ok = 'Écriture enregistrée';
+      if (this.editingId) {
+        const updated: Ecriture = { id: this.editingId, date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes: this.lignes, totalDebit: 0, totalCredit: 0 };
+        this.js.updateEcriture(updated);
+        this.ok = 'Écriture mise à jour';
+      } else {
+        this.js.addEcriture({ date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes: this.lignes });
+        this.ok = 'Écriture enregistrée';
+      }
       this.lignes = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
       this.recalc();
+      this.editingId = null;
     } catch (e: any) {
       this.error = e?.message || 'Erreur';
     }
@@ -102,5 +142,22 @@ export class EntriesComponent {
     const a = document.createElement('a');
     a.href = url; a.download = 'ecritures.csv'; a.click();
     URL.revokeObjectURL(url);
+  }
+
+  onCompteChange(l: EcritureLigne) {
+    const c = this.comptes.find(x => x.code === l.compte);
+    if (c && !l.libelle) l.libelle = c.intitule;
+  }
+  edit(e: Ecriture) {
+    this.editingId = e.id;
+    this.journalCode = e.journalCode;
+    this.date = e.date;
+    this.piece = e.piece || '';
+    this.reference = e.reference || '';
+    this.lignes = e.lignes.map(x => ({ ...x }));
+    this.recalc();
+  }
+  del(id: string) {
+    if (confirm('Supprimer cette écriture ?')) this.js.deleteEcriture(id);
   }
 }

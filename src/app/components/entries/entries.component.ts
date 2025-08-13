@@ -21,11 +21,19 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
             <option value="OD">OD - Opérations diverses</option>
             <option value="SAL">SAL - Salaires</option>
             <option value="CSH">CSH - Caisses</option>
+            <option value="MNE">MNE - Monnaie électronique</option>
           </select>
         </label>
         <input class="input" type="date" [(ngModel)]="date"/>
         <input class="input" placeholder="Pièce" [(ngModel)]="piece"/>
         <input class="input" placeholder="Référence" [(ngModel)]="reference"/>
+        <select class="input" [(ngModel)]="template" (change)="applyTemplate()">
+          <option value="">— Modèle d'écriture —</option>
+          <option value="ACHAT_FACTURE">Facture d'achat</option>
+          <option value="VENTE_FACTURE">Facture de vente</option>
+          <option value="PAIE_SALAIRE">Paie (salaire)</option>
+          <option value="BANQUE_VIREMENT">Banque (virement)</option>
+        </select>
         <button class="btn" (click)="addLine()">Ajouter ligne</button>
         <button class="btn" (click)="saveEntry()">Enregistrer</button>
         <button class="btn" (click)="exportCsv()">Export CSV</button>
@@ -107,6 +115,7 @@ export class EntriesComponent {
   date = (new Date()).toISOString().slice(0,10);
   piece = '';
   reference = '';
+  template: '' | 'ACHAT_FACTURE' | 'VENTE_FACTURE' | 'PAIE_SALAIRE' | 'BANQUE_VIREMENT' = '';
   lignes: (EcritureLigne & { _suggest?: { code:string; intitule:string }[]; _active?: number })[] = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
   totalDebit = 0;
   totalCredit = 0;
@@ -120,6 +129,42 @@ export class EntriesComponent {
   constructor(private js: JournalService, private coa: ChartOfAccountsService) {
     this.coa.getPlan().subscribe(p => this.comptes = p.map(i => ({ code: i.code, intitule: i.intitule })));
     this.js.getEcritures().subscribe(list => this.ecritures = list);
+  }
+
+  applyTemplate() {
+    const now = new Date().toISOString().slice(0,10);
+    this.date = now;
+    if (this.template === 'ACHAT_FACTURE') {
+      this.journalCode = 'ACH';
+      this.lignes = [
+        { compte: '601', libelle: 'Achat de marchandises', debit: 100000, credit: 0 },
+        { compte: '345', libelle: 'TVA déductible', debit: 19000, credit: 0 },
+        { compte: '401', libelle: 'Fournisseurs', debit: 0, credit: 119000 },
+      ];
+    } else if (this.template === 'VENTE_FACTURE') {
+      this.journalCode = 'VEN';
+      this.lignes = [
+        { compte: '411', libelle: 'Clients', debit: 238000, credit: 0 },
+        { compte: '701', libelle: 'Ventes de marchandises', debit: 0, credit: 200000 },
+        { compte: '445', libelle: 'TVA collectée', debit: 0, credit: 38000 },
+      ];
+    } else if (this.template === 'PAIE_SALAIRE') {
+      this.journalCode = 'SAL';
+      this.lignes = [
+        { compte: '641', libelle: 'Rémunérations du personnel', debit: 200000, credit: 0 },
+        { compte: '421', libelle: 'Personnel - Rémunérations dues', debit: 0, credit: 150000 },
+        { compte: '431', libelle: 'CNPS', debit: 0, credit: 50000 },
+      ];
+    } else if (this.template === 'BANQUE_VIREMENT') {
+      this.journalCode = 'BNK';
+      this.lignes = [
+        { compte: '512', libelle: 'Banque', debit: 0, credit: 100000 },
+        { compte: '401', libelle: 'Fournisseurs', debit: 100000, credit: 0 },
+      ];
+    } else {
+      return;
+    }
+    this.recalc();
   }
 
   addLine() { this.lignes.push({ compte: '', libelle: '', debit: 0, credit: 0 }); }

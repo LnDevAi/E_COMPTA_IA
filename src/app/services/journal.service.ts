@@ -5,7 +5,7 @@ import { environment } from '../../environments/environment';
 export interface Journal {
   code: string; // ACH, VEN, BNK, OD, SAL, CSH, etc.
   libelle: string; // Achats, Ventes, Banque, Opérations diverses, Salaires, Caisses
-  type: 'ACHATS' | 'VENTES' | 'BANQUE' | 'OD' | 'SALAIRES' | 'CAISSES' | 'AUTRE';
+  type: 'ACHATS' | 'VENTES' | 'BANQUE' | 'OD' | 'SALAIRES' | 'CAISSES' | 'MONNAIE_ELECTRONIQUE' | 'AUTRE';
 }
 
 export interface EcritureLigne {
@@ -36,7 +36,8 @@ export class JournalService {
     { code: 'BNK', libelle: 'Banque', type: 'BANQUE' },
     { code: 'OD',  libelle: 'Opérations diverses', type: 'OD' },
     { code: 'SAL', libelle: 'Salaires', type: 'SALAIRES' },
-    { code: 'CSH', libelle: 'Caisses', type: 'CAISSES' }
+    { code: 'CSH', libelle: 'Caisses', type: 'CAISSES' },
+    { code: 'MNE', libelle: 'Monnaie électronique', type: 'MONNAIE_ELECTRONIQUE' }
   ];
 
   private readonly journaux$ = new BehaviorSubject<Journal[]>([...this.defaultJournaux]);

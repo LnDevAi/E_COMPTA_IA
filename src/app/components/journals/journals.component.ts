@@ -29,6 +29,7 @@ export class FilterJournalPipe implements PipeTransform {
           <option value="OD">Opérations diverses</option>
           <option value="SALAIRES">Salaires</option>
           <option value="CAISSES">Caisses</option>
+          <option value="MONNAIE_ELECTRONIQUE">Monnaie électronique</option>
           <option value="AUTRE">Autre</option>
         </select>
         <button class="btn" (click)="addJournal()">Ajouter</button>
@@ -36,6 +37,8 @@ export class FilterJournalPipe implements PipeTransform {
         <button class="btn" (click)="exportJournauxExcel()">Export Excel</button>
         <button class="btn" (click)="exportJournauxPdf()">Export PDF</button>
       </div>
+      <div *ngIf="err" class="err">{{ err }}</div>
+      <div *ngIf="ok" class="ok">{{ ok }}</div>
 
       <table class="table">
         <thead><tr><th>Code</th><th>Libellé</th><th>Type</th><th>Actions</th></tr></thead>
@@ -57,6 +60,7 @@ export class FilterJournalPipe implements PipeTransform {
                   <option value="OD">Opérations diverses</option>
                   <option value="SALAIRES">Salaires</option>
                   <option value="CAISSES">Caisses</option>
+                  <option value="MONNAIE_ELECTRONIQUE">Monnaie électronique</option>
                   <option value="AUTRE">Autre</option>
                 </select>
               </ng-container>
@@ -112,6 +116,8 @@ export class FilterJournalPipe implements PipeTransform {
     .table { width:100%; border-collapse:collapse; }
     .table th, .table td { border:1px solid #e2e8f0; padding:8px 10px; text-align:left; }
     .table th { background:#f7fafc; }
+    .err { color:#e53e3e; margin-bottom:8px; }
+    .ok { color:#38a169; margin-bottom:8px; }
   `]
 })
 export class JournalsComponent {
@@ -126,6 +132,8 @@ export class JournalsComponent {
   editing: string | null = null;
   editLabel = '';
   editType: Journal['type'] = 'AUTRE';
+  err = '';
+  ok = '';
 
   constructor(private js: JournalService) {
     this.js.getJournaux().subscribe(j => this.journaux = j);
@@ -133,9 +141,19 @@ export class JournalsComponent {
   }
 
   addJournal() {
-    if (!this.newCode || !this.newLabel) return;
-    this.js.addJournal({ code: this.newCode.toUpperCase(), libelle: this.newLabel, type: this.newType });
-    this.newCode = this.newLabel = '';
+    this.err = this.ok = '';
+    const code = (this.newCode||'').trim().toUpperCase();
+    const label = (this.newLabel||'').trim();
+    const type = this.newType;
+    if (!code || !label) { this.err = 'Code et Libellé requis'; return; }
+    if (!/^[A-Z0-9_-]{2,10}$/.test(code)) { this.err = 'Code invalide (2-10 caractères alphanumériques)'; return; }
+    try {
+      this.js.addJournal({ code, libelle: label, type });
+      this.newCode = this.newLabel = '';
+      this.ok = 'Journal ajouté';
+    } catch (e: any) {
+      this.err = e?.message || 'Erreur lors de l\'ajout';
+    }
   }
   removeJournal(code: string) {
     if (confirm(`Supprimer le journal ${code} ?`)) this.js.removeJournal(code);
@@ -149,6 +167,7 @@ export class JournalsComponent {
   saveEdit(code: string) {
     if (!this.editing) return;
     this.js.updateJournal(code, { libelle: this.editLabel, type: this.editType });
+    this.ok = 'Journal mis à jour';
     this.cancelEdit();
   }
   cancelEdit() {

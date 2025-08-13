@@ -33,6 +33,8 @@ export class FilterJournalPipe implements PipeTransform {
         </select>
         <button class="btn" (click)="addJournal()">Ajouter</button>
         <button class="btn" (click)="exportJournaux()">Export CSV Journaux</button>
+        <button class="btn" (click)="exportJournauxExcel()">Export Excel</button>
+        <button class="btn" (click)="exportJournauxPdf()">Export PDF</button>
       </div>
 
       <table class="table">
@@ -40,10 +42,35 @@ export class FilterJournalPipe implements PipeTransform {
         <tbody>
           <tr *ngFor="let j of journaux">
             <td>{{ j.code }}</td>
-            <td>{{ j.libelle }}</td>
-            <td>{{ j.type }}</td>
             <td>
-              <button class="btn danger" (click)="removeJournal(j.code)">Supprimer</button>
+              <ng-container *ngIf="editing === j.code; else viewLabel">
+                <input class="input" [(ngModel)]="editLabel"/>
+              </ng-container>
+              <ng-template #viewLabel>{{ j.libelle }}</ng-template>
+            </td>
+            <td>
+              <ng-container *ngIf="editing === j.code; else viewType">
+                <select class="input" [(ngModel)]="editType">
+                  <option value="ACHATS">Achats</option>
+                  <option value="VENTES">Ventes</option>
+                  <option value="BANQUE">Banque</option>
+                  <option value="OD">Opérations diverses</option>
+                  <option value="SALAIRES">Salaires</option>
+                  <option value="CAISSES">Caisses</option>
+                  <option value="AUTRE">Autre</option>
+                </select>
+              </ng-container>
+              <ng-template #viewType>{{ j.type }}</ng-template>
+            </td>
+            <td>
+              <ng-container *ngIf="editing === j.code; else actionsView">
+                <button class="btn" (click)="saveEdit(j.code)">Enregistrer</button>
+                <button class="btn" (click)="cancelEdit()">Annuler</button>
+              </ng-container>
+              <ng-template #actionsView>
+                <button class="btn" (click)="startEdit(j)">Modifier</button>
+                <button class="btn danger" (click)="removeJournal(j.code)">Supprimer</button>
+              </ng-template>
             </td>
           </tr>
         </tbody>
@@ -56,6 +83,8 @@ export class FilterJournalPipe implements PipeTransform {
           <option *ngFor="let j of journaux" [value]="j.code">{{ j.code }} - {{ j.libelle }}</option>
         </select>
         <button class="btn" (click)="exportEcritures()">Export CSV Écritures</button>
+        <button class="btn" (click)="exportEcrituresExcel()">Export Excel</button>
+        <button class="btn" (click)="exportEcrituresPdf()">Export PDF</button>
       </div>
 
       <table class="table">
@@ -94,6 +123,10 @@ export class JournalsComponent {
   newType: Journal['type'] = 'AUTRE';
   selectedJournal = '';
 
+  editing: string | null = null;
+  editLabel = '';
+  editType: Journal['type'] = 'AUTRE';
+
   constructor(private js: JournalService) {
     this.js.getJournaux().subscribe(j => this.journaux = j);
     this.js.getEcritures().subscribe(e => this.ecritures = e);
@@ -108,13 +141,66 @@ export class JournalsComponent {
     if (confirm(`Supprimer le journal ${code} ?`)) this.js.removeJournal(code);
   }
 
+  startEdit(j: Journal) {
+    this.editing = j.code;
+    this.editLabel = j.libelle;
+    this.editType = j.type;
+  }
+  saveEdit(code: string) {
+    if (!this.editing) return;
+    this.js.updateJournal(code, { libelle: this.editLabel, type: this.editType });
+    this.cancelEdit();
+  }
+  cancelEdit() {
+    this.editing = null;
+    this.editLabel = '';
+    this.editType = 'AUTRE';
+  }
+
   exportJournaux() {
     const blob = this.js.exportJournauxCsv();
     this.download(blob, 'journaux.csv');
   }
+  exportJournauxExcel() {
+    const html = `
+      <html><head><meta charset="UTF-8"></head><body>
+      <table border="1"><thead><tr><th>Code</th><th>Libellé</th><th>Type</th></tr></thead><tbody>
+      ${this.journaux.map(j => `<tr><td>${j.code}</td><td>${escapeHtml(j.libelle)}</td><td>${j.type}</td></tr>`).join('')}
+      </tbody></table></body></html>`;
+    const blob = this.js.exportHtmlTableExcel(html);
+    this.download(blob, 'journaux.xls');
+  }
+  exportJournauxPdf() {
+    const win = window.open('', '_blank'); if (!win) return;
+    win.document.write('<html><head><meta charset="UTF-8"><title>Journaux</title></head><body>');
+    win.document.write('<h2>Journaux</h2><table border=1><thead><tr><th>Code</th><th>Libellé</th><th>Type</th></tr></thead><tbody>');
+    for (const j of this.journaux) win.document.write(`<tr><td>${j.code}</td><td>${escapeHtml(j.libelle)}</td><td>${j.type}</td></tr>`);
+    win.document.write('</tbody></table></body></html>');
+    win.document.close(); win.print();
+  }
+
   exportEcritures() {
     const blob = this.js.exportEcrituresCsv(this.selectedJournal || undefined);
     this.download(blob, 'ecritures.csv');
+  }
+  exportEcrituresExcel() {
+    const rows = this.ecritures.filter(e => !this.selectedJournal || e.journalCode === this.selectedJournal);
+    const html = `
+      <html><head><meta charset="UTF-8"></head><body>
+      <table border="1"><thead><tr><th>ID</th><th>Date</th><th>Journal</th><th>Pièce</th><th>Réf</th><th>Total Débit</th><th>Total Crédit</th></tr></thead><tbody>
+      ${rows.map(e => `<tr><td>${e.id}</td><td>${e.date}</td><td>${e.journalCode}</td><td>${escapeHtml(e.piece||'')}</td><td>${escapeHtml(e.reference||'')}</td><td>${e.totalDebit}</td><td>${e.totalCredit}</td></tr>`).join('')}
+      </tbody></table></body></html>`;
+    const blob = this.js.exportHtmlTableExcel(html);
+    this.download(blob, 'ecritures.xls');
+  }
+  exportEcrituresPdf() {
+    const rows = this.ecritures.filter(e => !this.selectedJournal || e.journalCode === this.selectedJournal);
+    const win = window.open('', '_blank'); if (!win) return;
+    win.document.write('<html><head><meta charset="UTF-8"><title>Écritures</title></head><body>');
+    win.document.write('<h2>Écritures</h2><table border=1><thead><tr><th>ID</th><th>Date</th><th>Journal</th><th>Pièce</th><th>Réf</th><th>Total Débit</th><th>Total Crédit</th></tr></thead><tbody>');
+    for (const e of rows) win.document.write(`<tr><td>${e.id}</td><td>${e.date}</td><td>${e.journalCode}</td><td>${escapeHtml(e.piece||'')}</td><td>${escapeHtml(e.reference||'')}</td><td>${e.totalDebit}</td><td>${e.totalCredit}</td></tr>`);
+    win.document.write('</tbody></table></body></html>');
+    win.document.close(); win.print();
   }
 
   private download(blob: Blob, name: string) {
@@ -124,3 +210,5 @@ export class JournalsComponent {
     URL.revokeObjectURL(url);
   }
 }
+
+function escapeHtml(v: string) { return v.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] as string)); }

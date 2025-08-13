@@ -51,6 +51,10 @@ export class JournalService {
     this.journaux$.next([...this.journaux$.value, j]);
   }
 
+  updateJournal(code: string, update: Partial<Pick<Journal, 'libelle'|'type'>>) {
+    this.journaux$.next(this.journaux$.value.map(j => j.code === code ? { ...j, ...update, code: j.code } : j));
+  }
+
   removeJournal(code: string) {
     this.journaux$.next(this.journaux$.value.filter(j => j.code !== code));
     // Option: supprimer les écritures liées
@@ -64,6 +68,17 @@ export class JournalService {
     const id = `${e.journalCode}-${Date.now()}`;
     const saved: Ecriture = { ...e, id, totalDebit, totalCredit };
     this.ecritures$.next([...this.ecritures$.value, saved]);
+  }
+
+  addEcrituresBatch(entries: Array<Omit<Ecriture, 'totalDebit'|'totalCredit'>>) {
+    const next: Ecriture[] = [...this.ecritures$.value];
+    for (const e of entries) {
+      const totalDebit = e.lignes.reduce((s,l)=>s+(Number(l.debit)||0),0);
+      const totalCredit = e.lignes.reduce((s,l)=>s+(Number(l.credit)||0),0);
+      if (Math.round((totalDebit-totalCredit)*100) !== 0) continue;
+      next.push({ ...e, totalDebit, totalCredit });
+    }
+    this.ecritures$.next(next);
   }
 
   deleteEcriture(id: string) {

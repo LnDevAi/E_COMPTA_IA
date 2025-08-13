@@ -35,8 +35,14 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
         <thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let l of lignes; let i = index">
-            <td>
-              <input class="input" list="cpt" [(ngModel)]="l.compte" (change)="onCompteChange(l)"/>
+            <td class="autocomplete-cell">
+              <input class="input" [(ngModel)]="l.compte" (input)="onCompteInput(l)" (keydown)="onCompteKey($event, l)"/>
+              <ul class="autocomplete" *ngIf="l._suggest && l._suggest.length">
+                <li *ngFor="let s of l._suggest; let si = index" [class.active]="si===l._active" (mousedown)="pickSuggest(l, si)">
+                  <span class="code">{{ s.code }}</span>
+                  <span class="label">{{ s.intitule }}</span>
+                </li>
+              </ul>
             </td>
             <td><input class="input" [(ngModel)]="l.libelle"/></td>
             <td><input class="input" type="number" step="0.01" [(ngModel)]="l.debit" (input)="recalc()"/></td>
@@ -88,6 +94,12 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
     .table th { background:#f7fafc; }
     .err { color:#e53e3e; margin-top:8px; }
     .ok { color:#38a169; margin-top:8px; }
+    .autocomplete-cell { position: relative; }
+    .autocomplete { position:absolute; z-index: 10; background:#fff; border:1px solid #e2e8f0; border-radius:6px; margin-top:2px; max-height:200px; overflow:auto; width: 360px; box-shadow:0 6px 12px rgba(0,0,0,0.08); }
+    .autocomplete li { display:flex; gap:8px; padding:6px 8px; cursor:pointer; }
+    .autocomplete li.active, .autocomplete li:hover { background:#f1f5f9; }
+    .autocomplete .code { font-weight: 600; min-width: 80px; }
+    .autocomplete .label { color:#334155; }
   `]
 })
 export class EntriesComponent {
@@ -95,7 +107,7 @@ export class EntriesComponent {
   date = (new Date()).toISOString().slice(0,10);
   piece = '';
   reference = '';
-  lignes: EcritureLigne[] = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
+  lignes: (EcritureLigne & { _suggest?: { code:string; intitule:string }[]; _active?: number })[] = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
   totalDebit = 0;
   totalCredit = 0;
   error = '';
@@ -142,6 +154,34 @@ export class EntriesComponent {
     const a = document.createElement('a');
     a.href = url; a.download = 'ecritures.csv'; a.click();
     URL.revokeObjectURL(url);
+  }
+
+  onCompteInput(l: any) {
+    const q = (l.compte||'').toLowerCase().trim();
+    if (!q) { l._suggest = []; l._active = 0; return; }
+    const max = 20;
+    const res: { code:string; intitule:string }[] = [];
+    for (const c of this.comptes) {
+      if (c.code.toLowerCase().includes(q) || c.intitule.toLowerCase().includes(q)) {
+        res.push(c);
+        if (res.length >= max) break;
+      }
+    }
+    l._suggest = res;
+    l._active = 0;
+  }
+  onCompteKey(evt: KeyboardEvent, l: any) {
+    if (!l._suggest?.length) return;
+    if (evt.key === 'ArrowDown') { evt.preventDefault(); l._active = Math.min((l._active||0)+1, l._suggest.length-1); }
+    else if (evt.key === 'ArrowUp') { evt.preventDefault(); l._active = Math.max((l._active||0)-1, 0); }
+    else if (evt.key === 'Enter') { evt.preventDefault(); this.pickSuggest(l, l._active||0); }
+    else if (evt.key === 'Escape') { l._suggest = []; }
+  }
+  pickSuggest(l: any, idx: number) {
+    const s = l._suggest?.[idx]; if (!s) return;
+    l.compte = s.code;
+    if (!l.libelle) l.libelle = s.intitule;
+    l._suggest = [];
   }
 
   onCompteChange(l: EcritureLigne) {

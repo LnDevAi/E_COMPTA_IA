@@ -265,6 +265,15 @@ export class EnterpriseComponent {
     this.es.getUsers().subscribe(v => this.users = v);
     this.es.getDirectors().subscribe(v => this.directors = v);
     this.es.getTaxes().subscribe(v => this.taxes = v);
+
+    // Chargement dynamique depuis assets si présent
+    fetch('assets/data/countries-accounting-json.json').then(r => r.ok ? r.json() : null).then(json => {
+      if (json && Array.isArray(json.countries)) {
+        this.countries = json.countries.map((c:any)=>({
+          code: c.code, name: c.name, currency: c.currency, locale: c.locale, accountingSystem: c.accountingSystem, chartOfAccounts: c.chartOfAccounts
+        }));
+      }
+    }).catch(()=>{});
   }
 
   saveIdentity() { this.es.updateIdentity(this.identity); }

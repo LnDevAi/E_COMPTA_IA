@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export type DeclarationCategory = 'FISCAL' | 'SOCIAL' | 'AUTRES';
-export type DeclarationType = 'TVA' | 'IS' | 'CNSS' | 'AUTRE';
+export type DeclarationType = 'TVA' | 'IS' | 'CNSS' | 'AUTRE' | 'IUTS' | 'BIC';
 export type DeclarationStatus = 'BROUILLON' | 'VALIDE' | 'PAYE';
 
 export interface DeclarationRecord {

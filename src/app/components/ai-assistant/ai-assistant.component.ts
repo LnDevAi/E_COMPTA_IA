@@ -13,7 +13,7 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
       <h1>🤖 Assistant IA</h1>
 
       <div class="toolbar">
-        <input type=\"file\" multiple accept=\"image/*,.pdf,.txt,.csv,.json\" (change)=\"onFiles($event)\" />
+        <input type="file" multiple accept="image/*,.pdf,.txt,.csv,.json" (change)="onFiles($event)" />
         <select class="input" [(ngModel)]="language">
           <option value="fra">Français</option>
           <option value="eng">Anglais</option>
@@ -28,7 +28,32 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
       </div>
 
       <div class="row">
-        <input class="input" [(ngModel)]="hint" placeholder="Indication (ex: facture achat, facture vente, salaire, virement banque)" />
+        <input class="input" [(ngModel)]="hint" placeholder="Indication (ex: facture prestation client, facture achat, virement banque)" />
+      </div>
+
+      <div class="row settings">
+        <label>Type d'opération
+          <select class="input" [(ngModel)]="operationType" (change)="saveSettings()">
+            <option value="DETECT">Détection automatique</option>
+            <option value="VENTE_PRESTATIONS">Vente — Prestations</option>
+            <option value="VENTE_MARCHANDISES">Vente — Marchandises</option>
+            <option value="ACHAT_PRESTATIONS">Achat — Prestations</option>
+            <option value="ACHAT_MARCHANDISES">Achat — Marchandises</option>
+            <option value="PAIE_SALAIRE">Paie — Salaire</option>
+            <option value="BANQUE_PAIEMENT">Banque — Paiement</option>
+            <option value="BANQUE_ENCAISSEMENT">Banque — Encaissement</option>
+          </select>
+        </label>
+        <label>TVA (%)<input class="input small" type="number" [(ngModel)]="tvaRate" (change)="saveSettings()"/></label>
+        <label>TVA collectée<input class="input small" [(ngModel)]="acctTvaCollecte" (change)="saveSettings()"/></label>
+        <label>TVA déductible<input class="input small" [(ngModel)]="acctTvaDeductible" (change)="saveSettings()"/></label>
+        <label>Vente prestations<input class="input small" [(ngModel)]="acctVentePrestations" (change)="saveSettings()"/></label>
+        <label>Vente marchandises<input class="input small" [(ngModel)]="acctVenteMarchandises" (change)="saveSettings()"/></label>
+        <label>Achat prestations<input class="input small" [(ngModel)]="acctAchatPrestations" (change)="saveSettings()"/></label>
+        <label>Achat marchandises<input class="input small" [(ngModel)]="acctAchatMarchandises" (change)="saveSettings()"/></label>
+      </div>
+
+      <div class="row">
         <button class="btn" (click)="proposeEntries()">Proposer des écritures</button>
       </div>
 
@@ -55,7 +80,7 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
           <thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th></th></tr></thead>
           <tbody>
             <tr *ngFor="let l of proposal; let i = index">
-              <td><input class="input" [(ngModel)]="l.compte" placeholder="ex: 401" /></td>
+              <td><input class="input" [(ngModel)]="l.compte" placeholder="ex: 706" /></td>
               <td><input class="input" [(ngModel)]="l.libelle" /></td>
               <td><input class="input" type="number" step="0.01" [(ngModel)]="l.debit" (input)="recalc()" /></td>
               <td><input class="input" type="number" step="0.01" [(ngModel)]="l.credit" (input)="recalc()" /></td>
@@ -81,7 +106,9 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
     .module-container { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
     .toolbar { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin: 8px 0; }
     .row { margin: 8px 0; }
+    .settings { display:flex; gap:0.5rem; flex-wrap: wrap; align-items:center; }
     .input { padding:8px 10px; border:1px solid #e2e8f0; border-radius:6px; }
+    .input.small { width: 120px; }
     .btn { padding:8px 10px; border:none; border-radius:6px; background:#3182ce; color:#fff; cursor:pointer; }
     .btn.danger { background:#e53e3e; }
     .text { width:100%; min-height: 160px; padding: 10px; border:1px solid #e2e8f0; border-radius: 6px; font-family: ui-monospace, monospace; }
@@ -112,7 +139,37 @@ export class AiAssistantComponent {
   error = '';
   ok = '';
 
-  constructor(private coa: ChartOfAccountsService, private js: JournalService) {}
+  operationType: 'DETECT' | 'VENTE_PRESTATIONS' | 'VENTE_MARCHANDISES' | 'ACHAT_PRESTATIONS' | 'ACHAT_MARCHANDISES' | 'PAIE_SALAIRE' | 'BANQUE_PAIEMENT' | 'BANQUE_ENCAISSEMENT' = 'DETECT';
+  tvaRate = 18;
+  acctTvaCollecte = '445';
+  acctTvaDeductible = '345';
+  acctVentePrestations = '706';
+  acctVenteMarchandises = '701';
+  acctAchatPrestations = '611';
+  acctAchatMarchandises = '601';
+
+  constructor(private coa: ChartOfAccountsService, private js: JournalService) {
+    this.loadSettings();
+  }
+
+  loadSettings() {
+    try {
+      const raw = localStorage.getItem('assistant_settings_v1');
+      if (raw) Object.assign(this, JSON.parse(raw));
+    } catch {}
+  }
+  saveSettings() {
+    try { localStorage.setItem('assistant_settings_v1', JSON.stringify({
+      operationType: this.operationType,
+      tvaRate: this.tvaRate,
+      acctTvaCollecte: this.acctTvaCollecte,
+      acctTvaDeductible: this.acctTvaDeductible,
+      acctVentePrestations: this.acctVentePrestations,
+      acctVenteMarchandises: this.acctVenteMarchandises,
+      acctAchatPrestations: this.acctAchatPrestations,
+      acctAchatMarchandises: this.acctAchatMarchandises
+    })); } catch {}
+  }
 
   onFiles(e: Event) {
     const input = e.target as HTMLInputElement;
@@ -168,59 +225,68 @@ export class AiAssistantComponent {
       const num = Number(String(m).replace(/\s/g,'').replace(/\./g,'').replace(/,/g,'.'));
       if (!isNaN(num) && isFinite(num)) amounts.push(Math.abs(num));
     }
+    const base = amounts.sort((a,b)=>b-a)[0] || 0;
+    const tva = /(tva|taxe)/.test(text) ? Math.round(base * (this.tvaRate/100) * 100) / 100 : 0;
 
-    const isPurchase = /achat|fournisseur|facture achat/.test(text);
-    const isSale = /vente|client|facture vente/.test(text);
-    const isSalary = /salaire|paie|bulletin/.test(text);
-    const isBank = /virement|banque|releve/.test(text);
+    // Détection
+    const hasWord = (w:RegExp) => w.test(text);
+    const isService = hasWord(/prestation|service|honoraire/);
+    const isGoods = hasWord(/marchandise|produit/);
+    const isSale = hasWord(/facture\s*(client|vente)|client|ventes?/);
+    const isPurchase = hasWord(/facture\s*(fournisseur|achat)|fournisseur|achats?/);
+    const isSalary = hasWord(/salaire|paie|bulletin/);
+    const isBank = hasWord(/virement|banque|releve|cheque|chèque/);
 
-    const top = amounts.sort((a,b)=>b-a)[0] || 0;
-
-    if (isPurchase) this.journalCode = 'ACH';
-    else if (isSale) this.journalCode = 'VEN';
-    else if (isSalary) this.journalCode = 'SAL';
-    else if (isBank) this.journalCode = 'BNK';
-
-    if (isPurchase && top) {
-      const achat = this.findAccount(['achat','marchandise']) || '';
-      const tiers = this.findAccount(['fournisseur']) || '401';
-      lines.push({ compte: achat, libelle: 'Achat', debit: top, credit: 0 });
-      // TVA: proposer un libellé, laisser le compte vide pour que l'utilisateur choisisse
-      if (/tva/.test(text)) lines.push({ compte: '', libelle: 'TVA déductible', debit: Math.round(top*0.18*100)/100, credit: 0 });
-      lines.push({ compte: tiers, libelle: 'Fournisseur', debit: 0, credit: top + (/(tva|taxe)/.test(text) ? Math.round(top*0.18*100)/100 : 0) });
-    } else if (isSale && top) {
-      const produit = this.findAccount(['vente','produit']) || '';
-      const client = this.findAccount(['client']) || '411';
-      lines.push({ compte: client, libelle: 'Client', debit: top + (/(tva|taxe)/.test(text) ? Math.round(top*0.18*100)/100 : 0), credit: 0 });
-      if (/tva/.test(text)) lines.push({ compte: '', libelle: 'TVA collectée', debit: 0, credit: Math.round(top*0.18*100)/100 });
-      lines.push({ compte: produit, libelle: 'Vente', debit: 0, credit: top });
-    } else if (isSalary && top) {
-      const charge = this.findAccount(['remunerations','salaires','charges']) || '641';
-      const personnel = this.findAccount(['personnel','remunerations dues']) || '421';
-      lines.push({ compte: charge, libelle: 'Rémunérations du personnel', debit: top, credit: 0 });
-      // Proposer des retenues sociales si détectées
-      const social = /cnps|cnss|cotis/.test(text) ? Math.round(top*0.25*100)/100 : 0;
-      const net = Math.max(0, top - social);
-      if (social) lines.push({ compte: '', libelle: 'Charges sociales', debit: 0, credit: social });
-      lines.push({ compte: personnel, libelle: 'Personnel - Rémunérations dues', debit: 0, credit: net });
-    } else if (isBank && top) {
-      const banque = this.findAccount(['banque']) || '512';
-      const tiers = this.findAccount(['fournisseur','client']) || '';
-      const isOutgoing = /reglement|paiement|fournisseur/.test(text);
-      if (isOutgoing) {
-        lines.push({ compte: tiers || '401', libelle: 'Fournisseur', debit: top, credit: 0 });
-        lines.push({ compte: banque, libelle: 'Banque', debit: 0, credit: top });
-      } else {
-        lines.push({ compte: banque, libelle: 'Banque', debit: top, credit: 0 });
-        lines.push({ compte: tiers || '411', libelle: 'Client', debit: 0, credit: top });
-      }
+    let type = this.operationType;
+    if (type === 'DETECT') {
+      if (isSalary) type = 'PAIE_SALAIRE';
+      else if (isBank) type = hasWord(/reglement|paiement|fournisseur/) ? 'BANQUE_PAIEMENT' : 'BANQUE_ENCAISSEMENT';
+      else if (isSale || (!isPurchase && hasWord(/client/))) type = isService ? 'VENTE_PRESTATIONS' : 'VENTE_MARCHANDISES';
+      else if (isPurchase || hasWord(/fournisseur/)) type = isService ? 'ACHAT_PRESTATIONS' : 'ACHAT_MARCHANDISES';
+      else type = 'VENTE_PRESTATIONS';
     }
 
-    if (!lines.length) {
-      // fallback minimal
-      const val = amounts[0] || 0;
-      lines.push({ compte: '', libelle: 'Ligne 1', debit: val, credit: 0 });
-      lines.push({ compte: '', libelle: 'Ligne 2', debit: 0, credit: val });
+    // Journal suggéré
+    if (type.startsWith('VENTE')) this.journalCode = 'VEN';
+    else if (type.startsWith('ACHAT')) this.journalCode = 'ACH';
+    else if (type.startsWith('BANQUE')) this.journalCode = 'BNK';
+    else if (type === 'PAIE_SALAIRE') this.journalCode = 'SAL';
+
+    // Génération des lignes
+    if (type === 'VENTE_PRESTATIONS' && base) {
+      lines.push({ compte: '411', libelle: 'Clients', debit: base + tva, credit: 0 });
+      if (tva) lines.push({ compte: this.acctTvaCollecte, libelle: 'TVA collectée', debit: 0, credit: tva });
+      lines.push({ compte: this.acctVentePrestations, libelle: 'Prestations de services', debit: 0, credit: base });
+    } else if (type === 'VENTE_MARCHANDISES' && base) {
+      lines.push({ compte: '411', libelle: 'Clients', debit: base + tva, credit: 0 });
+      if (tva) lines.push({ compte: this.acctTvaCollecte, libelle: 'TVA collectée', debit: 0, credit: tva });
+      lines.push({ compte: this.acctVenteMarchandises, libelle: 'Ventes de marchandises', debit: 0, credit: base });
+    } else if (type === 'ACHAT_PRESTATIONS' && base) {
+      lines.push({ compte: this.acctAchatPrestations, libelle: 'Achat prestations / charges', debit: base, credit: 0 });
+      if (tva) lines.push({ compte: this.acctTvaDeductible, libelle: 'TVA déductible', debit: tva, credit: 0 });
+      lines.push({ compte: '401', libelle: 'Fournisseurs', debit: 0, credit: base + tva });
+    } else if (type === 'ACHAT_MARCHANDISES' && base) {
+      lines.push({ compte: this.acctAchatMarchandises, libelle: 'Achat de marchandises', debit: base, credit: 0 });
+      if (tva) lines.push({ compte: this.acctTvaDeductible, libelle: 'TVA déductible', debit: tva, credit: 0 });
+      lines.push({ compte: '401', libelle: 'Fournisseurs', debit: 0, credit: base + tva });
+    } else if (type === 'PAIE_SALAIRE' && base) {
+      const social = hasWord(/cnps|cnss|cotis/) ? Math.round(base*0.25*100)/100 : 0;
+      const net = Math.max(0, base - social);
+      lines.push({ compte: '641', libelle: 'Rémunérations du personnel', debit: base, credit: 0 });
+      if (social) lines.push({ compte: '43', libelle: 'Organismes sociaux', debit: 0, credit: social });
+      lines.push({ compte: '421', libelle: 'Personnel - Rémunérations dues', debit: 0, credit: net });
+    } else if (type === 'BANQUE_PAIEMENT' && base) {
+      lines.push({ compte: '401', libelle: 'Fournisseurs', debit: base, credit: 0 });
+      lines.push({ compte: '512', libelle: 'Banque', debit: 0, credit: base });
+    } else if (type === 'BANQUE_ENCAISSEMENT' && base) {
+      lines.push({ compte: '512', libelle: 'Banque', debit: base, credit: 0 });
+      lines.push({ compte: '411', libelle: 'Clients', debit: 0, credit: base });
+    }
+
+    if (!lines.length && base) {
+      // fallback équilibré
+      lines.push({ compte: '', libelle: 'Ligne 1', debit: base, credit: 0 });
+      lines.push({ compte: '', libelle: 'Ligne 2', debit: 0, credit: base });
     }
 
     this.proposal = lines;

@@ -184,6 +184,27 @@ export class EntriesComponent {
     this.js.getTemplates().subscribe(ts => { this.templates = ts; this.refreshTemplatesForJournal(); });
   }
 
+  private computeLibelleFromCode(code: string): string {
+    if (!code) return '';
+    const map = new Map(this.comptes.map(c => [c.code, c.intitule] as [string,string]));
+    const child = map.get(code);
+    if (!child) return '';
+    // Trouver le parent le plus proche existant
+    let parentCode: string | null = null;
+    for (let l = code.length - 1; l >= 1; l--) {
+      const p = code.substring(0, l);
+      if (map.has(p)) { parentCode = p; break; }
+    }
+    if (!parentCode) return child;
+    const parentLabel = map.get(parentCode) || '';
+    if (!parentLabel) return child;
+    // Si l'enfant contient déjà le libellé parent, éviter la répétition
+    const childLower = child.toLowerCase();
+    const parentLower = parentLabel.toLowerCase();
+    if (childLower.includes(parentLower)) return child;
+    return `${parentLabel} ${child}`.trim();
+  }
+
   get templatesForJournal(): EntryTemplate[] {
     return this.templates.filter(t => t.journalCode === this.journalCode);
   }
@@ -289,13 +310,13 @@ export class EntriesComponent {
   pickSuggest(l: any, idx: number) {
     const s = l._suggest?.[idx]; if (!s) return;
     l.compte = s.code;
-    if (!l.libelle) l.libelle = s.intitule;
+    if (!l.libelle) l.libelle = this.computeLibelleFromCode(s.code) || s.intitule;
     l._suggest = [];
   }
 
   onCompteChange(l: EcritureLigne) {
-    const c = this.comptes.find(x => x.code === l.compte);
-    if (c && !l.libelle) l.libelle = c.intitule;
+    const lbl = this.computeLibelleFromCode(l.compte);
+    if (lbl && !l.libelle) l.libelle = lbl;
   }
   edit(e: Ecriture) {
     this.editingId = e.id;

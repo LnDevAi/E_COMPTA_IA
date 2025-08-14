@@ -20,7 +20,7 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
       </div>
 
       <div *ngIf="cat==='FISCAL'">
-        <div class="help">Réf. Burkina: <a target="_blank" href="https://dgi.bf/calendrier-fiscal/">Calendrier fiscal DGI</a></div>
+        
         <div class="subtabs">
           <button class="tab" [class.active]="active==='TVA'" (click)="active='TVA'">TVA</button>
           <button class="tab" [class.active]="active==='IS'" (click)="active='IS'">IS</button>
@@ -96,7 +96,7 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
       </div>
 
       <div *ngIf="cat==='SOCIAL'">
-        <div class="help">Réf. Burkina (CNSS): <a target="_blank" href="https://businessprocedures.bf/media/D%C3%A9cret-2021-0337%20portant%20r%C3%A9gime%20de%20s%C3%A9curit%C3%A9%20sociale%20au%20Burkina%20Faso.pdf">Décret CNSS</a></div>
+        
         <div class="panel">
           <h3>Déclaration CNSS</h3>
           <div class="grid">

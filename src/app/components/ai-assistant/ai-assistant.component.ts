@@ -13,7 +13,7 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
       <h1>🤖 Assistant IA</h1>
 
       <div class="toolbar">
-        <input type="file" multiple accept="image/*" (change)="onFiles($event)" />
+        <input type=\"file\" multiple accept=\"image/*,.pdf,.txt,.csv,.json\" (change)=\"onFiles($event)\" />
         <select class="input" [(ngModel)]="language">
           <option value="fra">Français</option>
           <option value="eng">Anglais</option>
@@ -126,10 +126,28 @@ export class AiAssistantComponent {
     this.progress = 0;
     try {
       const Tesseract = await import('tesseract.js');
+      const pdfjsLib = await import('pdfjs-dist/build/pdf');
+      // @ts-ignore
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js`;
       let all = '';
       for (const f of this.files) {
-        const { data } = await Tesseract.recognize(f, this.language, { logger: m => { if (m.status === 'recognizing text' && m.progress != null) this.progress = m.progress; } });
-        all += (data.text || '') + '\n';
+        const name = (f.name||'').toLowerCase();
+        if (name.endsWith('.pdf')) {
+          const buffer = await f.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+          for (let p=1; p<=pdf.numPages; p++) {
+            const page = await pdf.getPage(p);
+            const content = await page.getTextContent();
+            const text = content.items.map((it:any)=>it.str).join(' ');
+            all += text + '\n';
+          }
+        } else if (name.endsWith('.txt') || name.endsWith('.csv') || name.endsWith('.json')) {
+          const text = await f.text();
+          all += text + '\n';
+        } else {
+          const { data } = await Tesseract.recognize(f, this.language, { logger: m => { if (m.status === 'recognizing text' && m.progress != null) this.progress = m.progress; } });
+          all += (data.text || '') + '\n';
+        }
       }
       this.extracted = all.trim();
     } catch (e: any) {

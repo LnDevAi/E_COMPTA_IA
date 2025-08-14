@@ -26,6 +26,13 @@ export interface Ecriture {
   totalCredit: number;
 }
 
+export interface EntryTemplate {
+  id: string;
+  journalCode: string;
+  name: string;
+  lignes: EcritureLigne[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class JournalService {
   readonly api = environment.apiUrl;
@@ -42,9 +49,11 @@ export class JournalService {
 
   private readonly journaux$ = new BehaviorSubject<Journal[]>([...this.defaultJournaux]);
   private readonly ecritures$ = new BehaviorSubject<Ecriture[]>([]);
+  private readonly templates$ = new BehaviorSubject<EntryTemplate[]>(this.loadTemplates());
 
   getJournaux() { return this.journaux$.asObservable(); }
   getEcritures() { return this.ecritures$.asObservable(); }
+  getTemplates() { return this.templates$.asObservable(); }
 
   addJournal(j: Journal) {
     const exists = this.journaux$.value.some(x => x.code === j.code);
@@ -60,6 +69,9 @@ export class JournalService {
     this.journaux$.next(this.journaux$.value.filter(j => j.code !== code));
     // Option: supprimer les écritures liées
     this.ecritures$.next(this.ecritures$.value.filter(e => e.journalCode !== code));
+    // Supprimer les modèles liés
+    const next = this.templates$.value.filter(t => t.journalCode !== code);
+    this.templates$.next(next); this.persistTemplates(next);
   }
 
   addEcriture(e: Omit<Ecriture, 'id'|'totalDebit'|'totalCredit'>) {
@@ -96,6 +108,41 @@ export class JournalService {
     if (Math.round((totalDebit-totalCredit)*100) !== 0) throw new Error('Écriture non équilibrée');
     updated.totalDebit = totalDebit; updated.totalCredit = totalCredit;
     this.ecritures$.next(this.ecritures$.value.map(e => e.id === updated.id ? { ...updated } : e));
+  }
+
+  // Templates CRUD
+  createTemplate(journalCode: string, name: string, lignes: EcritureLigne[]): EntryTemplate {
+    const id = `${journalCode}-${Date.now()}`;
+    const tpl: EntryTemplate = { id, journalCode, name, lignes: lignes.map(l => ({ ...l })) };
+    const next = [...this.templates$.value, tpl];
+    this.templates$.next(next); this.persistTemplates(next);
+    return tpl;
+  }
+
+  updateTemplate(id: string, name: string, lignes: EcritureLigne[]): void {
+    const next = this.templates$.value.map(t => t.id === id ? { ...t, name, lignes: lignes.map(l => ({ ...l })) } : t);
+    this.templates$.next(next); this.persistTemplates(next);
+  }
+
+  deleteTemplate(id: string): void {
+    const next = this.templates$.value.filter(t => t.id !== id);
+    this.templates$.next(next); this.persistTemplates(next);
+  }
+
+  private loadTemplates(): EntryTemplate[] {
+    try {
+      const raw = localStorage.getItem('ecompta_templates_v1');
+      if (!raw) return [];
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr as EntryTemplate[];
+    } catch {
+      return [];
+    }
+  }
+
+  private persistTemplates(list: EntryTemplate[]): void {
+    try { localStorage.setItem('ecompta_templates_v1', JSON.stringify(list)); } catch {}
   }
 
   // Exports

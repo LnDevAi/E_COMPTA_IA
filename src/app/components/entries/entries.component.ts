@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { JournalService, Ecriture, EcritureLigne } from '../../services/journal.service';
+import { JournalService, Ecriture, EcritureLigne, EntryTemplate } from '../../services/journal.service';
 import { ChartOfAccountsService } from '../../services/chart-of-accounts.service';
 
 @Component({
@@ -27,16 +27,55 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
         <input class="input" type="date" [(ngModel)]="date"/>
         <input class="input" placeholder="Pièce" [(ngModel)]="piece"/>
         <input class="input" placeholder="Référence" [(ngModel)]="reference"/>
-        <select class="input" [(ngModel)]="template" (change)="applyTemplate()">
-          <option value="">— Modèle d'écriture —</option>
-          <option value="ACHAT_FACTURE">Facture d'achat</option>
-          <option value="VENTE_FACTURE">Facture de vente</option>
-          <option value="PAIE_SALAIRE">Paie (salaire)</option>
-          <option value="BANQUE_VIREMENT">Banque (virement)</option>
+
+        <select class="input" [(ngModel)]="selectedTemplateId" (change)="applySelectedTemplate()">
+          <option value="">— Modèle ({{ templatesForJournal.length }}) —</option>
+          <option *ngFor="let t of templatesForJournal" [value]="t.id">{{ t.name }}</option>
         </select>
+        <button class="btn" (click)="openTemplateEditor()">Gérer les modèles</button>
+
         <button class="btn" (click)="addLine()">Ajouter ligne</button>
         <button class="btn" (click)="saveEntry()">Enregistrer</button>
         <button class="btn" (click)="exportCsv()">Export CSV</button>
+      </div>
+
+      <!-- Template editor modal -->
+      <div class="modal" *ngIf="templateEditorOpen">
+        <div class="modal-body">
+          <h3>Modèles — {{ journalCode }}</h3>
+          <div class="modal-grid">
+            <div class="column">
+              <h4>Liste</h4>
+              <ul class="tpl-list">
+                <li *ngFor="let t of templatesForJournal" [class.active]="t.id===editingTemplateId" (click)="selectTemplateForEdit(t)">{{ t.name }}</li>
+              </ul>
+              <div class="row">
+                <input class="input" placeholder="Nom du modèle" [(ngModel)]="templateName"/>
+                <button class="btn" (click)="createOrUpdateTemplate()">{{ editingTemplateId ? 'Mettre à jour' : 'Créer' }}</button>
+                <button class="btn danger" [disabled]="!editingTemplateId" (click)="deleteTemplate()">Supprimer</button>
+              </div>
+            </div>
+            <div class="column">
+              <h4>Contenu du modèle</h4>
+              <table class="table">
+                <thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th></th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let l of templateLines; let i = index">
+                    <td><input class="input" [(ngModel)]="l.compte"/></td>
+                    <td><input class="input" [(ngModel)]="l.libelle"/></td>
+                    <td><input class="input" type="number" step="0.01" [(ngModel)]="l.debit"/></td>
+                    <td><input class="input" type="number" step="0.01" [(ngModel)]="l.credit"/></td>
+                    <td><button class="btn danger" (click)="templateLines.splice(i,1)">✖</button></td>
+                  </tr>
+                </tbody>
+              </table>
+              <button class="btn" (click)="templateLines.push({ compte:'', libelle:'', debit:0, credit:0 })">Ajouter ligne</button>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn" (click)="templateEditorOpen=false">Fermer</button>
+          </div>
+        </div>
       </div>
 
       <table class="table">
@@ -108,6 +147,13 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
     .autocomplete li.active, .autocomplete li:hover { background:#f1f5f9; }
     .autocomplete .code { font-weight: 600; min-width: 80px; }
     .autocomplete .label { color:#334155; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; }
+    .modal-body { background:#fff; border-radius:12px; padding:16px; width: min(100%, 960px); max-height: 90vh; overflow:auto; }
+    .modal-grid { display:grid; grid-template-columns: 300px 1fr; gap: 16px; }
+    .tpl-list { list-style:none; padding:0; margin:0; border:1px solid #e2e8f0; border-radius:6px; max-height:380px; overflow:auto; }
+    .tpl-list li { padding:8px 12px; border-bottom:1px solid #edf2f7; cursor:pointer; }
+    .tpl-list li.active, .tpl-list li:hover { background:#f1f5f9; }
+    .modal-actions { display:flex; justify-content:flex-end; margin-top:12px; }
   `]
 })
 export class EntriesComponent {
@@ -115,7 +161,12 @@ export class EntriesComponent {
   date = (new Date()).toISOString().slice(0,10);
   piece = '';
   reference = '';
-  template: '' | 'ACHAT_FACTURE' | 'VENTE_FACTURE' | 'PAIE_SALAIRE' | 'BANQUE_VIREMENT' = '';
+  selectedTemplateId = '';
+  templateEditorOpen = false;
+  templateName = '';
+  editingTemplateId: string | null = null;
+  templateLines: EcritureLigne[] = [];
+
   lignes: (EcritureLigne & { _suggest?: { code:string; intitule:string }[]; _active?: number })[] = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
   totalDebit = 0;
   totalCredit = 0;
@@ -124,47 +175,60 @@ export class EntriesComponent {
 
   comptes: { code: string; intitule: string }[] = [];
   ecritures: Ecriture[] = [];
+  templates: EntryTemplate[] = [];
   editingId: string | null = null;
 
   constructor(private js: JournalService, private coa: ChartOfAccountsService) {
     this.coa.getPlan().subscribe(p => this.comptes = p.map(i => ({ code: i.code, intitule: i.intitule })));
     this.js.getEcritures().subscribe(list => this.ecritures = list);
+    this.js.getTemplates().subscribe(ts => { this.templates = ts; this.refreshTemplatesForJournal(); });
   }
 
-  applyTemplate() {
-    const now = new Date().toISOString().slice(0,10);
-    this.date = now;
-    if (this.template === 'ACHAT_FACTURE') {
-      this.journalCode = 'ACH';
-      this.lignes = [
-        { compte: '601', libelle: 'Achat de marchandises', debit: 100000, credit: 0 },
-        { compte: '345', libelle: 'TVA déductible', debit: 19000, credit: 0 },
-        { compte: '401', libelle: 'Fournisseurs', debit: 0, credit: 119000 },
-      ];
-    } else if (this.template === 'VENTE_FACTURE') {
-      this.journalCode = 'VEN';
-      this.lignes = [
-        { compte: '411', libelle: 'Clients', debit: 238000, credit: 0 },
-        { compte: '701', libelle: 'Ventes de marchandises', debit: 0, credit: 200000 },
-        { compte: '445', libelle: 'TVA collectée', debit: 0, credit: 38000 },
-      ];
-    } else if (this.template === 'PAIE_SALAIRE') {
-      this.journalCode = 'SAL';
-      this.lignes = [
-        { compte: '641', libelle: 'Rémunérations du personnel', debit: 200000, credit: 0 },
-        { compte: '421', libelle: 'Personnel - Rémunérations dues', debit: 0, credit: 150000 },
-        { compte: '431', libelle: 'CNPS', debit: 0, credit: 50000 },
-      ];
-    } else if (this.template === 'BANQUE_VIREMENT') {
-      this.journalCode = 'BNK';
-      this.lignes = [
-        { compte: '512', libelle: 'Banque', debit: 0, credit: 100000 },
-        { compte: '401', libelle: 'Fournisseurs', debit: 100000, credit: 0 },
-      ];
-    } else {
-      return;
+  get templatesForJournal(): EntryTemplate[] {
+    return this.templates.filter(t => t.journalCode === this.journalCode);
+  }
+  refreshTemplatesForJournal() {
+    if (this.selectedTemplateId && !this.templatesForJournal.some(t => t.id === this.selectedTemplateId)) {
+      this.selectedTemplateId = '';
     }
+  }
+
+  applySelectedTemplate() {
+    const tpl = this.templates.find(t => t.id === this.selectedTemplateId);
+    if (!tpl) return;
+    this.journalCode = tpl.journalCode;
+    this.lignes = tpl.lignes.map(l => ({ ...l }));
     this.recalc();
+  }
+
+  openTemplateEditor() {
+    this.templateEditorOpen = true;
+    this.templateName = '';
+    this.editingTemplateId = null;
+    this.templateLines = [ { compte:'', libelle:'', debit:0, credit:0 } ];
+  }
+  selectTemplateForEdit(t: EntryTemplate) {
+    this.editingTemplateId = t.id;
+    this.templateName = t.name;
+    this.templateLines = t.lignes.map(l => ({ ...l }));
+  }
+  createOrUpdateTemplate() {
+    const name = (this.templateName||'').trim();
+    if (!name) { this.error = 'Nom de modèle requis'; return; }
+    if (this.editingTemplateId) {
+      this.js.updateTemplate(this.editingTemplateId, name, this.templateLines);
+      this.ok = 'Modèle mis à jour';
+    } else {
+      const tpl = this.js.createTemplate(this.journalCode, name, this.templateLines);
+      this.editingTemplateId = tpl.id;
+      this.ok = 'Modèle créé';
+    }
+  }
+  deleteTemplate() {
+    if (!this.editingTemplateId) return;
+    if (!confirm('Supprimer ce modèle ?')) return;
+    this.js.deleteTemplate(this.editingTemplateId);
+    this.editingTemplateId = null; this.templateName = ''; this.templateLines = [ { compte:'', libelle:'', debit:0, credit:0 } ];
   }
 
   addLine() { this.lignes.push({ compte: '', libelle: '', debit: 0, credit: 0 }); }

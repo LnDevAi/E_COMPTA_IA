@@ -107,15 +107,96 @@ app.get('/api/plan/export.csv', (req, res) => {
 
 function csv(v) { return (v && (v.includes(';') || v.includes('"'))) ? '"'+v.replace(/"/g,'""')+'"' : (v||''); }
 
-// Stubs for other modules
-app.get('/api/user-management/*', (req,res)=>res.json({ ok:true, items:[] }));
-app.get('/api/financial-statements/*', (req,res)=>res.json({ ok:true }));
-app.get('/api/bank-reconciliation/*', (req,res)=>res.json({ ok:true }));
-app.get('/api/fiscal-settings/*', (req,res)=>res.json({ ok:true }));
-app.get('/api/balance-n1/*', (req,res)=>res.json({ ok:true }));
-app.get('/api/knowledge-base/*', (req,res)=>res.json({ ok:true }));
-app.get('/api/invoices/:id/download', (req,res)=>{ res.setHeader('Content-Type','application/pdf'); res.send('%PDF-1.3\n%… minimal'); });
-app.get('/api/certificats/:id/download', (req,res)=>{ res.setHeader('Content-Type','application/pdf'); res.send('%PDF-1.3\n%… minimal'); });
+// ---------- Helpers per module ----------
+function dataPath(name) { return path.join(DATA_DIR, `${name}.json`); }
+function load(name, fallback) { return loadJsonSafe(dataPath(name), fallback); }
+function save(name, obj) { return saveJsonSafe(dataPath(name), obj); }
+function genId(prefix) { return `${prefix}-${Date.now()}-${Math.floor(Math.random()*1e4)}`; }
+
+// ---------- User Management ----------
+app.get('/api/user-management/users', (req,res)=>{
+	const data = load('users', { users: [] });
+	res.json({ users: data.users });
+});
+app.post('/api/user-management/users', (req,res)=>{
+	const data = load('users', { users: [] });
+	const u = req.body || {}; u.id = genId('U');
+	data.users.push(u); save('users', data); res.status(201).json(u);
+});
+app.put('/api/user-management/users/:id', (req,res)=>{
+	const data = load('users', { users: [] });
+	const id = req.params.id; const idx = data.users.findIndex(x=>x.id===id);
+	if (idx<0) return res.status(404).json({ error:'not found' });
+	data.users[idx] = { ...data.users[idx], ...req.body, id }; save('users', data);
+	res.json(data.users[idx]);
+});
+app.delete('/api/user-management/users/:id', (req,res)=>{
+	const data = load('users', { users: [] });
+	const id = req.params.id; const next = data.users.filter(x=>x.id!==id); save('users',{ users: next });
+	res.status(204).end();
+});
+
+// ---------- Fiscal Settings (Taxes) ----------
+app.get('/api/fiscal-settings/taxes', (req,res)=>{
+	const data = load('fiscal', { taxes: [] }); res.json({ taxes: data.taxes });
+});
+app.put('/api/fiscal-settings/taxes', (req,res)=>{
+	const taxes = Array.isArray(req.body?.taxes) ? req.body.taxes : [];
+	save('fiscal', { taxes }); res.json({ taxes });
+});
+
+// ---------- Balance N-1 (opening balances) ----------
+app.get('/api/balance-n1/opening', (req,res)=>{
+	const data = load('balanceN1', { opening: [] }); res.json({ opening: data.opening });
+});
+app.put('/api/balance-n1/opening', (req,res)=>{
+	const opening = Array.isArray(req.body?.opening) ? req.body.opening : [];
+	save('balanceN1', { opening }); res.json({ opening });
+});
+
+// ---------- Financial Statements ----------
+app.post('/api/financial-statements/compute', (req,res)=>{
+	// inputs: { entries: Ecriture[], from, to }
+	const entries = Array.isArray(req.body?.entries) ? req.body.entries : [];
+	const from = String(req.body?.from||''); const to = String(req.body?.to||'');
+	const within = (d)=> (!from||d>=from)&&(!to||d<=to);
+	let produits=0, charges=0, c1=0,c2=0,c3=0,c4=0,c5=0;
+	for (const e of entries) {
+		if (!within(e.date)) continue;
+		for (const l of e.lignes||[]) {
+			const code = String(l.compte||''); const delta = (Number(l.debit)||0)-(Number(l.credit)||0);
+			const cls = code[0];
+			if (cls==='7') produits += -delta; else if (cls==='6') charges += delta; else if (cls==='1') c1 += -delta; else if (cls==='2') c2 += delta; else if (cls==='3') c3 += delta; else if (cls==='4') c4 += delta; else if (cls==='5') c5 += delta;
+		}
+	}
+	const resultat = produits - charges;
+	res.json({ produits, charges, resultat, bilan:{ actif:{ imm:c2, sto:c3, tres:c5 }, passif:{ cap:c1, tiers:-c4, result:resultat } } });
+});
+
+// ---------- Bank Reconciliation ----------
+app.get('/api/bank-reconciliation/transactions', (req,res)=>{
+	const data = load('reconciliation', { transactions: [], statements: [] });
+	res.json({ transactions: data.transactions, statements: data.statements });
+});
+app.post('/api/bank-reconciliation/transactions', (req,res)=>{
+	const data = load('reconciliation', { transactions: [], statements: [] });
+	const tx = req.body || {}; tx.id = genId('TX'); data.transactions.push(tx); save('reconciliation', data); res.status(201).json(tx);
+});
+app.post('/api/bank-reconciliation/statements', (req,res)=>{
+	const data = load('reconciliation', { transactions: [], statements: [] });
+	const st = req.body || {}; st.id = genId('ST'); data.statements.push(st); save('reconciliation', data); res.status(201).json(st);
+});
+app.post('/api/bank-reconciliation/match', (req,res)=>{
+	res.json({ ok:true, matches: req.body?.pairs||[] });
+});
+
+// ---------- Knowledge Base ----------
+app.get('/api/knowledge-base/items', (req,res)=>{
+	const data = load('kb', { items: [] }); res.json({ items: data.items });
+});
+app.post('/api/knowledge-base/items', (req,res)=>{
+	const data = load('kb', { items: [] }); const it = req.body||{}; it.id = genId('KB'); data.items.push(it); save('kb', data); res.status(201).json(it);
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Backend API listening on :${PORT}`));

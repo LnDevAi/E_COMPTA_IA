@@ -22,13 +22,39 @@ export class TiersService {
 	getAll() { return this.tiers$.asObservable(); }
 	getValue() { return this.tiers$.value; }
 
+	private prefixFor(type: ThirdPartyType): string { return type==='CLIENT' ? 'CLT' : type==='FOURNISSEUR' ? 'FRS' : 'AUT'; }
+	private nextNumberFor(type: ThirdPartyType): number {
+		const pref = this.prefixFor(type) + '-';
+		const nums = this.tiers$.value
+			.filter(t => t.type===type && t.code.startsWith(pref))
+			.map(t => parseInt(t.code.slice(pref.length), 10))
+			.filter(n => !isNaN(n));
+		return nums.length ? Math.max(...nums) + 1 : 1;
+	}
+	getNextCode(type: ThirdPartyType): string {
+		const n = this.nextNumberFor(type);
+		return `${this.prefixFor(type)}-${String(n).padStart(4,'0')}`;
+	}
+	private isCodeTaken(code: string, excludeId?: string): boolean {
+		return this.tiers$.value.some(t => t.code.toUpperCase() === code.toUpperCase() && t.id !== excludeId);
+	}
+
 	create(t: Omit<ThirdParty, 'id'>) {
+		const base: Omit<ThirdParty,'id'> = { ...t };
+		let code = (base.code||'').trim();
+		if (!code) code = this.getNextCode(base.type);
+		if (this.isCodeTaken(code)) throw new Error('Code tiers déjà utilisé');
 		const id = `TIER-${Date.now()}`;
-		const next = [...this.tiers$.value, { ...t, id }];
+		const next = [...this.tiers$.value, { ...base, code, id }];
 		this.tiers$.next(next); this.persist(next);
 	}
 	update(id: string, patch: Partial<ThirdParty>) {
-		const next = this.tiers$.value.map(x => x.id === id ? { ...x, ...patch } : x);
+		const cur = this.tiers$.value.find(x => x.id === id); if (!cur) return;
+		const code = (patch.code ?? cur.code).trim();
+		if (!code) throw new Error('Code requis');
+		if (this.isCodeTaken(code, id)) throw new Error('Code tiers déjà utilisé');
+		const merged = { ...cur, ...patch, code };
+		const next = this.tiers$.value.map(x => x.id === id ? merged : x);
 		this.tiers$.next(next); this.persist(next);
 	}
 	remove(id: string) {
@@ -47,9 +73,13 @@ export class TiersService {
 		const out: ThirdParty[] = [];
 		for (let i=1; i<lines.length; i++) {
 			const cols = this.parseCsvLine(lines[i]);
-			const [id, code, name, type, email, phone, address, defaultAccount] = cols;
-			if (!code || !name) continue;
-			out.push({ id: id||`TIER-${Date.now()}-${i}`, code, name: name.replace(/^"|"$/g,''), type: (type as ThirdPartyType)||'AUTRE', email, phone, address: address?.replace(/^"|"$/g,''), defaultAccount });
+			const [idRaw, codeRaw, name, typeRaw, email, phone, address, defaultAccount] = cols;
+			const type = (String(typeRaw||'AUTRE').toUpperCase() as ThirdPartyType);
+			let code = (codeRaw||'').trim();
+			if (!code) code = this.getNextCode(type);
+			if (out.some(t=>t.code.toUpperCase()===code.toUpperCase()) || this.isCodeTaken(code)) continue; // skip duplicates
+			const id = idRaw || `TIER-${Date.now()}-${i}`;
+			out.push({ id, code, name: name?.replace(/^"|"$/g,''), type, email, phone, address: address?.replace(/^"|"$/g,''), defaultAccount });
 		}
 		this.tiers$.next(out); this.persist(out);
 	}

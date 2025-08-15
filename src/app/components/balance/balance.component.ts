@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { JournalService, Ecriture } from '../../services/journal.service';
+import { ChartOfAccountsService } from '../../services/chart-of-accounts.service';
 
 interface BalanceRow {
 	compte: string;
@@ -58,6 +59,17 @@ interface BalanceRow {
 						<td>{{ r.endCredit | number:'1.2-2' }}</td>
 					</tr>
 				</tbody>
+				<tfoot>
+					<tr>
+						<th colspan="2">Totaux</th>
+						<th *ngIf="format==='6'">{{ total.prevDebit | number:'1.2-2' }}</th>
+						<th *ngIf="format==='6'">{{ total.prevCredit | number:'1.2-2' }}</th>
+						<th *ngIf="format!=='2'">{{ total.movDebit | number:'1.2-2' }}</th>
+						<th *ngIf="format!=='2'">{{ total.movCredit | number:'1.2-2' }}</th>
+						<th>{{ total.endDebit | number:'1.2-2' }}</th>
+						<th>{{ total.endCredit | number:'1.2-2' }}</th>
+					</tr>
+				</tfoot>
 			</table>
 		</div>
 	`,
@@ -75,8 +87,16 @@ export class BalanceComponent {
 	to = new Date().toISOString().slice(0,10);
 	format: '6'|'4'|'2' = '6';
 	rows: BalanceRow[] = [];
+	total = { prevDebit:0, prevCredit:0, movDebit:0, movCredit:0, endDebit:0, endCredit:0 } as any;
+	private libelles = new Map<string,string>();
 
-	constructor(private js: JournalService) {}
+	constructor(private js: JournalService, private coa: ChartOfAccountsService) {
+		this.coa.getPlan().subscribe(p => {
+			for (const i of p) this.libelles.set(i.code, i.intitule);
+		});
+	}
+
+	private labelFor(code: string): string { return this.libelles.get(code) || code; }
 
 	compute() {
 		const ecritures: Ecriture[] = (this.js as any).ecritures$?.value || [];
@@ -90,7 +110,7 @@ export class BalanceComponent {
 			for (const l of e.lignes) {
 				const key = l.compte || '';
 				if (!key) continue;
-				if (!map.has(key)) map.set(key, { compte: key, intitule: '', prevDebit:0, prevCredit:0, movDebit:0, movCredit:0, endDebit:0, endCredit:0 });
+				if (!map.has(key)) map.set(key, { compte: key, intitule: this.labelFor(key), prevDebit:0, prevCredit:0, movDebit:0, movCredit:0, endDebit:0, endCredit:0 });
 				const row = map.get(key)!;
 				if (before(e.date)) { row.prevDebit += Number(l.debit)||0; row.prevCredit += Number(l.credit)||0; }
 				if (within(e.date)) { row.movDebit += Number(l.debit)||0; row.movCredit += Number(l.credit)||0; }
@@ -104,6 +124,15 @@ export class BalanceComponent {
 			const endCredit = endBal < 0 ? -endBal : 0;
 			return { ...r, endDebit, endCredit };
 		}).sort((a,b)=>a.compte.localeCompare(b.compte));
+
+		// Totaux
+		const sum = { prevDebit:0, prevCredit:0, movDebit:0, movCredit:0, endDebit:0, endCredit:0 } as any;
+		for (const r of this.rows) {
+			sum.prevDebit += r.prevDebit; sum.prevCredit += r.prevCredit;
+			sum.movDebit += r.movDebit; sum.movCredit += r.movCredit;
+			sum.endDebit += r.endDebit; sum.endCredit += r.endCredit;
+		}
+		this.total = sum;
 	}
 
 	exportCsv() {

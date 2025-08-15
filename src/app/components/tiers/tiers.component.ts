@@ -23,7 +23,7 @@ import { TiersService, ThirdParty } from '../../services/tiers.service';
 					<label>Code<input class="input" [(ngModel)]="editing.code"/></label>
 					<label>Nom<input class="input" [(ngModel)]="editing.name"/></label>
 					<label>Type
-						<select class="input" [(ngModel)]="editing.type">
+						<select class="input" [(ngModel)]="editing.type" (change)="prefillCode()">
 							<option value="CLIENT">Client</option>
 							<option value="FOURNISSEUR">Fournisseur</option>
 							<option value="AUTRE">Autre</option>
@@ -38,6 +38,7 @@ import { TiersService, ThirdParty } from '../../services/tiers.service';
 					<button class="btn" (click)="save()">Enregistrer</button>
 					<button class="btn" (click)="cancel()">Annuler</button>
 				</div>
+				<div class="err" *ngIf="err">{{ err }}</div>
 			</div>
 
 			<table class="table">
@@ -75,9 +76,16 @@ export class TiersComponent {
 	q = '';
 	list: ThirdParty[] = [];
 	editing: any = null;
+	err = '';
 
 	constructor(private svc: TiersService) {
 		this.svc.getAll().subscribe(l => this.list = l);
+	}
+
+	prefillCode() {
+		if (!this.editing?.id && !this.editing?.code) {
+			this.editing.code = this.svc.getNextCode(this.editing.type);
+		}
 	}
 
 	get filtered(): ThirdParty[] {
@@ -86,13 +94,15 @@ export class TiersComponent {
 		return this.list.filter(t => t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q) || (t.email||'').toLowerCase().includes(q));
 	}
 
-	startAdd() { this.editing = { code: '', name: '', type: 'AUTRE', email: '', phone: '', address: '', defaultAccount: '' }; }
-	startEdit(t: ThirdParty) { this.editing = { ...t }; }
+	startAdd() { this.err=''; this.editing = { code: '', name: '', type: 'AUTRE', email: '', phone: '', address: '', defaultAccount: '' }; this.prefillCode(); }
+	startEdit(t: ThirdParty) { this.err=''; this.editing = { ...t }; }
 	save() {
-		if (!this.editing) return;
-		if (this.editing.id) this.svc.update(this.editing.id, this.editing);
-		else this.svc.create(this.editing);
-		this.editing = null;
+		this.err=''; if (!this.editing) return;
+		try {
+			if (this.editing.id) this.svc.update(this.editing.id, this.editing);
+			else this.svc.create(this.editing);
+			this.editing = null;
+		} catch(e:any) { this.err = e?.message||'Erreur'; }
 	}
 	cancel() { this.editing = null; }
 	del(id: string) { if (confirm('Supprimer ?')) this.svc.remove(id); }

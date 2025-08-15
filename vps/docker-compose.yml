@@ -2,15 +2,15 @@ version: "3.9"
 services:
   api:
     build:
-      context: ../backend
+      context: ../backend-java
       dockerfile: Dockerfile
     container_name: ecompta_api
     environment:
-      - NODE_ENV=production
+      - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m
     ports:
-      - "3000:3000"
+      - "8080:8080"
     volumes:
-      - ../backend/data:/usr/src/app/data
+      - ../backend-java/data:/app/data
     restart: unless-stopped
 
   web:

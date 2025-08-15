@@ -294,6 +294,10 @@ export class EnterpriseComponent {
       if (json && Array.isArray(json.countriesTaxes)) {
         this.taxesDataset = json.countriesTaxes;
         this.applyAutoTaxesIfReady();
+        if (this.pendingCountryCode) {
+          this.applyTaxesForCountry(this.pendingCountryCode);
+          this.pendingCountryCode = null;
+        }
       }
     } catch {}
   }
@@ -339,7 +343,11 @@ export class EnterpriseComponent {
       this.settings.app.chartOfAccounts = selected.chartOfAccounts;
       this.saveSettings();
       // Auto taxes
-      this.applyTaxesForCountry(selected.code);
+      if (!this.taxesDataset.length) {
+        this.pendingCountryCode = selected.code;
+      } else {
+        this.applyTaxesForCountry(selected.code);
+      }
     }
   }
 

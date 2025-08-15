@@ -262,14 +262,17 @@ export class EnterpriseComponent {
     { code: 'FR', name: 'France', currency: 'EUR', locale: 'fr-FR', accountingSystem: 'FR-PCG', chartOfAccounts: 'FR-PCG' }
   ];
 
+  private taxesDataset: any[] = [];
+  private pendingCountryCode: string | null = null;
+
   constructor(private es: EnterpriseService) {
-    this.es.getIdentity().subscribe(v => this.identity = v);
-    this.es.getSettings().subscribe(v => this.settings = v);
+    this.es.getIdentity().subscribe(v => { this.identity = v; this.applyAutoTaxesIfReady(); });
+    this.es.getSettings().subscribe(v => { this.settings = v; this.applyAutoTaxesIfReady(); });
     this.es.getUsers().subscribe(v => this.users = v);
     this.es.getDirectors().subscribe(v => this.directors = v);
     this.es.getTaxes().subscribe(v => this.taxes = v);
 
-    // Chargement dynamique depuis assets si présent
+    // Chargement dynamique pays
     fetch('assets/data/countries-accounting-json.json').then(r => r.ok ? r.json() : null).then(json => {
       if (json && Array.isArray(json.countries)) {
         this.countries = json.countries.map((c:any)=>({
@@ -277,6 +280,51 @@ export class EnterpriseComponent {
         }));
       }
     }).catch(()=>{});
+
+    // Charger dataset taxes (priorité au fichier étendu)
+    this.loadTaxesDataset();
+  }
+
+  private async loadTaxesDataset() {
+    try {
+      let json: any = await fetch('assets/data/taxes-by-country-json.json').then(r=>r.ok?r.json():null);
+      if (!json || !Array.isArray(json.countriesTaxes)) {
+        json = await fetch('assets/data/countries-taxes.json').then(r=>r.ok?r.json():null);
+      }
+      if (json && Array.isArray(json.countriesTaxes)) {
+        this.taxesDataset = json.countriesTaxes;
+        this.applyAutoTaxesIfReady();
+      }
+    } catch {}
+  }
+
+  private applyAutoTaxesIfReady() {
+    const code = (this.settings?.app?.country||'').trim();
+    if (!code || !this.taxesDataset.length) return;
+    this.applyTaxesForCountry(code);
+  }
+
+  private toPeriod(p: string|undefined): 'MENSUEL'|'TRIMESTRIEL'|'ANNUEL' {
+    const s = (p||'').toLowerCase();
+    if (s.includes('trim')) return 'TRIMESTRIEL';
+    if (s.includes('month') || s.includes('mens')) return 'MENSUEL';
+    return 'ANNUEL';
+  }
+
+  private applyTaxesForCountry(countryCode: string) {
+    const code = countryCode.toUpperCase();
+    const found = this.taxesDataset.find((c:any)=> String(c.code).toUpperCase() === code);
+    if (!found || !found.taxes) return;
+    const t = found.taxes;
+    const list: any[] = [];
+    if (t.vat?.standardRate!=null) list.push({ name: t.vat.name||'TVA', category:'FISCAL', rate: Number(t.vat.standardRate), period: this.toPeriod(t.vat.declarationPeriod)||'MENSUEL', dueDay: undefined, journal:'', account:'' });
+    if (t.corporateIncomeTax?.rate!=null) list.push({ name: t.corporateIncomeTax.name||'IS', category:'FISCAL', rate: Number(t.corporateIncomeTax.rate), period: this.toPeriod(t.corporateIncomeTax.declarationPeriod)||'ANNUEL', dueDay: undefined, journal:'', account:'' });
+    if (t.socialContributions?.employer?.rate!=null || t.socialContributions?.employee?.rate!=null) {
+      const emp = Number(t.socialContributions?.employer?.rate||0);
+      const sal = Number(t.socialContributions?.employee?.rate||0);
+      if (emp || sal) list.push({ name: t.socialContributions.name||'CNSS', category:'SOCIAL', rate: emp+sal, period: this.toPeriod(t.socialContributions.declarationPeriod)||'MENSUEL', dueDay: undefined, journal:'', account:'' });
+    }
+    this.es.replaceAllTaxes(list as any);
   }
 
   saveIdentity() { this.es.updateIdentity(this.identity); }
@@ -290,18 +338,8 @@ export class EnterpriseComponent {
       this.settings.app.accountingSystem = selected.accountingSystem;
       this.settings.app.chartOfAccounts = selected.chartOfAccounts;
       this.saveSettings();
-      // Régénération auto des taxes à partir du pays
-      fetch('assets/data/countries-taxes.json').then(r=>r.ok?r.json():null).then(json=>{
-        if (!json || !Array.isArray(json.countriesTaxes)) return;
-        const found = json.countriesTaxes.find((c:any)=>String(c.code).toUpperCase()===String(selected.code).toUpperCase());
-        if (!found || !found.taxes) return;
-        const list: any[] = [];
-        const t = found.taxes;
-        if (t.vat?.standardRate!=null) list.push({ name: t.vat.name||'TVA', category:'FISCAL', rate: Number(t.vat.standardRate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
-        if (t.corporateIncomeTax?.rate!=null) list.push({ name: t.corporateIncomeTax.name||'IS', category:'FISCAL', rate: Number(t.corporateIncomeTax.rate), period:'ANNUEL', dueDay: undefined, journal:'', account:'' });
-        if (t.socialContributions?.employer?.rate!=null && t.socialContributions?.employee?.rate!=null) list.push({ name: 'CNSS (emp+sal)', category:'SOCIAL', rate: Number(t.socialContributions.employer.rate)+Number(t.socialContributions.employee.rate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
-        this.es.replaceAllTaxes(list as any);
-      }).catch(()=>{});
+      // Auto taxes
+      this.applyTaxesForCountry(selected.code);
     }
   }
 
@@ -341,16 +379,6 @@ export class EnterpriseComponent {
 
   regenTaxesFromCountry() {
     const code = (this.settings?.app?.country||'').toUpperCase(); if (!code) return;
-    fetch('assets/data/countries-taxes.json').then(r=>r.ok?r.json():null).then(json=>{
-      if (!json || !Array.isArray(json.countriesTaxes)) return;
-      const found = json.countriesTaxes.find((c:any)=>String(c.code).toUpperCase()===code);
-      if (!found || !found.taxes) return;
-      const list: any[] = [];
-      const t = found.taxes;
-      if (t.vat?.standardRate!=null) list.push({ name: t.vat.name||'TVA', category:'FISCAL', rate: Number(t.vat.standardRate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
-      if (t.corporateIncomeTax?.rate!=null) list.push({ name: t.corporateIncomeTax.name||'IS', category:'FISCAL', rate: Number(t.corporateIncomeTax.rate), period:'ANNUEL', dueDay: undefined, journal:'', account:'' });
-      if (t.socialContributions?.employer?.rate!=null && t.socialContributions?.employee?.rate!=null) list.push({ name: 'CNSS (emp+sal)', category:'SOCIAL', rate: Number(t.socialContributions.employer.rate)+Number(t.socialContributions.employee.rate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
-      this.es.replaceAllTaxes(list as any);
-    }).catch(()=>{});
+    this.applyTaxesForCountry(code);
   }
 }

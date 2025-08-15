@@ -247,15 +247,18 @@ export class TaxDeclarationsComponent {
     });
 
     // Charger le dataset taxes depuis assets
-    fetch('assets/data/countries-taxes.json')
-      .then(r => r.ok ? r.json() : null)
-      .then(json => {
+    (async ()=>{
+      try {
+        let json: any = await fetch('assets/data/taxes-by-country-json.json').then(r=>r.ok?r.json():null);
+        if (!json || !Array.isArray(json.countriesTaxes)) {
+          json = await fetch('assets/data/countries-taxes.json').then(r=>r.ok?r.json():null);
+        }
         if (json && Array.isArray(json.countriesTaxes)) {
           this.taxesDataset = json.countriesTaxes;
           this.tryApplyTaxDefaults();
         }
-      })
-      .catch(()=>{});
+      } catch {}
+    })();
   }
 
   private tryApplyTaxDefaults() {

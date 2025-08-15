@@ -30,6 +30,8 @@ bootstrapApplication(AppComponent, {
         { path: 'enterprise', loadComponent: () => import('./app/components/enterprise/enterprise.component').then(m => m.EnterpriseComponent) },
         { path: 'journals', loadComponent: () => import('./app/components/journals/journals.component').then(m => m.JournalsComponent) },
         { path: 'ledgers', loadComponent: () => import('./app/components/ledgers/ledgers.component').then(m => m.LedgersComponent) },
+        { path: 'balance', loadComponent: () => import('./app/components/balance/balance.component').then(m => m.BalanceComponent) },
+        { path: 'tiers', loadComponent: () => import('./app/components/tiers/tiers.component').then(m => m.TiersComponent) },
         { path: 'chart-of-accounts', loadComponent: () => import('./app/components/chart-of-accounts/chart-of-accounts.component').then(m => m.ChartOfAccountsComponent) },
         { path: 'entries', loadComponent: () => import('./app/components/entries/entries.component').then(m => m.EntriesComponent) },
         { path: 'ai-assistant', loadComponent: () => import('./app/components/ai-assistant/ai-assistant.component').then(m => m.AiAssistantComponent) },

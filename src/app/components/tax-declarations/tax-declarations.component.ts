@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DeclarationsService, DeclarationRecord, DeclarationType } from '../../services/declarations.service';
 import { TypeFilterPipe } from './type-filter.pipe';
 import { JournalService, EcritureLigne } from '../../services/journal.service';
+import { EnterpriseService, PlatformSettings, EnterpriseIdentity } from '../../services/enterprise.service';
 
 @Component({
   selector: 'app-tax-declarations',
@@ -12,6 +13,10 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
   template: `
     <div class="module-container">
       <h1>📋 Déclarations</h1>
+
+      <div class="help" *ngIf="selectedCountryCode && selectedCountryName">
+        Pays: <b>{{ selectedCountryName }}</b> ({{ selectedCountryCode }}) — Devise: <b>{{ selectedCurrency }}</b>
+      </div>
 
       <div class="tabs">
         <button class="tab" [class.active]="cat==='FISCAL'" (click)="cat='FISCAL'">Fiscales</button>
@@ -29,6 +34,10 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
         </div>
         <div class="panel" *ngIf="active==='TVA'">
           <h3>Déclaration TVA</h3>
+          <div class="help" *ngIf="taxInfo?.vat">
+            Taux standard: <b>{{ taxInfo.vat.standardRate }}%</b>
+            &nbsp;|&nbsp; Délais: <b>{{ taxInfo.vat.paymentDeadline }}</b>
+          </div>
           <div class="grid">
             <label>Période (AAAA-MM)<input class="input" [(ngModel)]="tva.period" placeholder="2025-07"/></label>
             <label>Année<input class="input" type="number" [(ngModel)]="tva.year"/></label>
@@ -48,6 +57,10 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
         </div>
         <div class="panel" *ngIf="active==='IS'">
           <h3>Déclaration IS</h3>
+          <div class="help" *ngIf="taxInfo?.corporateIncomeTax">
+            Taux par défaut: <b>{{ taxInfo.corporateIncomeTax.rate }}%</b>
+            &nbsp;|&nbsp; Échéance: <b>{{ taxInfo.corporateIncomeTax.paymentDeadline }}</b>
+          </div>
           <div class="grid">
             <label>Année<input class="input" type="number" [(ngModel)]="is.year"/></label>
             <label>Résultat fiscal<input class="input" type="number" step="0.01" [(ngModel)]="is.resultat"/></label>
@@ -99,6 +112,10 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
         
         <div class="panel">
           <h3>Déclaration CNSS</h3>
+          <div class="help" *ngIf="taxInfo?.socialContributions">
+            Taux employeur: <b>{{ taxInfo.socialContributions.employer?.rate }}%</b>
+            &nbsp;|&nbsp; Taux salarié: <b>{{ taxInfo.socialContributions.employee?.rate }}%</b>
+          </div>
           <div class="grid">
             <label>Période (AAAA-MM)<input class="input" [(ngModel)]="cnss.period" placeholder="2025-07"/></label>
             <label>Année<input class="input" type="number" [(ngModel)]="cnss.year"/></label>
@@ -128,7 +145,7 @@ import { JournalService, EcritureLigne } from '../../services/journal.service';
             <label>Montant dû<input class="input" type="number" step="0.01" [(ngModel)]="autre.amountDue"/></label>
           </div>
           <div class="row">
-            <button class=\"btn\" (click)=\"save('AUTRE', (autre.amountDue||0), autre, 'AUTRES')\">Enregistrer</button>
+            <button class="btn" (click)="save('AUTRE', (autre.amountDue||0), autre, 'AUTRES')">Enregistrer</button>
           </div>
         </div>
       </div>
@@ -208,8 +225,57 @@ export class TaxDeclarationsComponent {
 
   records: DeclarationRecord[] = [];
 
-  constructor(private ds: DeclarationsService, private js: JournalService) {
+  selectedCountryCode = '';
+  selectedCountryName = '';
+  selectedCurrency = '';
+  taxInfo: any = null;
+  private taxesDataset: any[] = [];
+
+  constructor(private ds: DeclarationsService, private js: JournalService, private es: EnterpriseService) {
     this.ds.getAll().subscribe(r => this.records = r);
+
+    // Suivre les paramètres d'entreprise pour récupérer le pays
+    this.es.getSettings().subscribe((s: PlatformSettings) => {
+      const code = (s?.app?.country||'').trim();
+      if (code) { this.selectedCountryCode = code.toUpperCase(); this.tryApplyTaxDefaults(); }
+    });
+    this.es.getIdentity().subscribe((id: EnterpriseIdentity) => {
+      if (!this.selectedCountryCode) {
+        const val = (id?.country||'').trim();
+        if (val && val.length === 2) { this.selectedCountryCode = val.toUpperCase(); this.tryApplyTaxDefaults(); }
+      }
+    });
+
+    // Charger le dataset taxes depuis assets
+    fetch('assets/data/countries-taxes.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(json => {
+        if (json && Array.isArray(json.countriesTaxes)) {
+          this.taxesDataset = json.countriesTaxes;
+          this.tryApplyTaxDefaults();
+        }
+      })
+      .catch(()=>{});
+  }
+
+  private tryApplyTaxDefaults() {
+    if (!this.selectedCountryCode || !this.taxesDataset?.length) return;
+    const found = this.taxesDataset.find((c:any)=> String(c.code).toUpperCase() === this.selectedCountryCode);
+    if (!found) return;
+    this.selectedCountryName = found.name || '';
+    this.selectedCurrency = found.currency || '';
+    this.taxInfo = found.taxes || null;
+
+    if (this.taxInfo?.corporateIncomeTax?.rate != null) {
+      this.is.taux = Number(this.taxInfo.corporateIncomeTax.rate);
+      this.bic.taux = Number(this.taxInfo.corporateIncomeTax.rate);
+    }
+    if (this.taxInfo?.socialContributions?.employer?.rate != null) {
+      this.cnss.tauxEmp = Number(this.taxInfo.socialContributions.employer.rate);
+    }
+    if (this.taxInfo?.socialContributions?.employee?.rate != null) {
+      this.cnss.tauxSal = Number(this.taxInfo.socialContributions.employee.rate);
+    }
   }
 
   tvaDue() { return Math.max(0, (Number(this.tva.tvaCollecte)||0) - (Number(this.tva.tvaDeductible)||0)); }

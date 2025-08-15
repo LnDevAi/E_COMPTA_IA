@@ -19,7 +19,9 @@ export interface EnterpriseIdentity {
 	website?: string;
 	fiscalRegime?: string;
 	currency?: string;
-	fiscalYearStartMonth?: number; // 1..12
+	fiscalYearStartMonth?: number; // 1..12 (legacy)
+	fiscalYearStartDate?: string; // yyyy-mm-dd
+	fiscalYearEndDate?: string;   // yyyy-mm-dd
 	director?: string;
 	bankName?: string; // legacy
 	bankAccount?: string; // legacy
@@ -134,6 +136,11 @@ export class EnterpriseService {
 	addTax(t: Omit<TaxDefinition,'id'>) { const id = `T-${Date.now()}`; const next = [...this.taxes$.value, { ...t, id }]; this.taxes$.next(next); this.persist(this.keyTaxes, next); }
 	updateTax(id: string, patch: Partial<TaxDefinition>) { const next = this.taxes$.value.map(x=>x.id===id?{...x,...patch}:x); this.taxes$.next(next); this.persist(this.keyTaxes, next); }
 	removeTax(id: string) { const next = this.taxes$.value.filter(x=>x.id!==id); this.taxes$.next(next); this.persist(this.keyTaxes, next); }
+	replaceAllTaxes(list: Omit<TaxDefinition,'id'>[]) {
+		const next = list.map((t, i) => ({ ...t, id: `T-${Date.now()}-${i}` }));
+		this.taxes$.next(next as TaxDefinition[]);
+		this.persist(this.keyTaxes, next);
+	}
 
 	roleTemplate(role: RoleName): RoleRights {
 		switch (role) {
@@ -151,7 +158,7 @@ export class EnterpriseService {
 			const banks: BankAccount[] = base.banks || (base.bankName || base.bankAccount ? [{ bankName: base.bankName||'', account: base.bankAccount||'' }] : []);
 			return { name: '', legalForm: '', registrationNumber: '', taxId: '', activity: '', country: '', city: '', address: '', email: '', phone: '', ...base, banks } as EnterpriseIdentity;
 		} catch {
-			return { name: '', legalForm: '', registrationNumber: '', taxId: '', activity: '', country: '', city: '', address: '', email: '', phone: '' };
+			return { name: '', legalForm: '', registrationNumber: '', taxId: '', activity: '', country: '', city: '', address: '', email: '', phone: '' } as EnterpriseIdentity;
 		}
 	}
 	private loadSettings(): PlatformSettings {

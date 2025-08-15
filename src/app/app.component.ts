@@ -23,8 +23,10 @@ import { BankReconciliationComponent } from './components/bank-reconciliation/ba
             <a class="nav-btn" href="#/financial-statements" routerLink="/financial-statements" routerLinkActive="active">📈 États Financiers</a>
             <a class="nav-btn" href="#/journals" routerLink="/journals" routerLinkActive="active">📓 Journaux</a>
             <a class="nav-btn" href="#/ledgers" routerLink="/ledgers" routerLinkActive="active">📚 Grands livres</a>
+            <a class="nav-btn" href="#/balance" routerLink="/balance" routerLinkActive="active">🧮 Balance</a>
             <a class="nav-btn" href="#/chart-of-accounts" routerLink="/chart-of-accounts" routerLinkActive="active">🧾 Plan comptable</a>
               <a class="nav-btn" href="#/entries" routerLink="/entries" routerLinkActive="active">🧾 Écritures</a>
+              <a class="nav-btn" href="#/tiers" routerLink="/tiers" routerLinkActive="active">👥 Tiers</a>
               <a class="nav-btn" href="#/ai-assistant" routerLink="/ai-assistant" routerLinkActive="active">🤖 Assistant IA</a>
               <a class="nav-btn" href="#/tax-declarations" routerLink="/tax-declarations" routerLinkActive="active">📋 Déclarations</a>
               <a class="nav-btn enterprise" href="#/enterprise" routerLink="/enterprise" routerLinkActive="active">🏢 Entreprise</a>

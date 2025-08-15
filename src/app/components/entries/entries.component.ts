@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { JournalService, Ecriture, EcritureLigne, EntryTemplate } from '../../services/journal.service';
 import { ChartOfAccountsService } from '../../services/chart-of-accounts.service';
+import { TiersService, ThirdParty } from '../../services/tiers.service';
 
 @Component({
   selector: 'app-entries',
@@ -79,7 +80,7 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
       </div>
 
       <table class="table">
-        <thead><tr><th>Compte</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th></th></tr></thead>
+        <thead><tr><th>Compte</th><th>Tiers</th><th>Libellé</th><th>Débit</th><th>Crédit</th><th></th></tr></thead>
         <tbody>
           <tr *ngFor="let l of lignes; let i = index">
             <td class="autocomplete-cell">
@@ -91,6 +92,15 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
                 </li>
               </ul>
             </td>
+            <td class="autocomplete-cell">
+              <input class="input" [(ngModel)]="l._tiersQuery" (input)="onTiersInput(l)" (keydown)="onTiersKey($event, l)" placeholder="Code/nom tiers"/>
+              <ul class="autocomplete" *ngIf="l._tiersSuggest && l._tiersSuggest.length">
+                <li *ngFor="let t of l._tiersSuggest; let ti = index" [class.active]="ti===l._tiersActive" (mousedown)="pickTiers(l, ti)">
+                  <span class="code">{{ t.code }}</span>
+                  <span class="label">{{ t.name }}</span>
+                </li>
+              </ul>
+            </td>
             <td><input class="input" [(ngModel)]="l.libelle"/></td>
             <td><input class="input" type="number" step="0.01" [(ngModel)]="l.debit" (input)="recalc()"/></td>
             <td><input class="input" type="number" step="0.01" [(ngModel)]="l.credit" (input)="recalc()"/></td>
@@ -98,8 +108,8 @@ import { ChartOfAccountsService } from '../../services/chart-of-accounts.service
           </tr>
         </tbody>
         <tfoot>
-          <tr><th colspan="2">Totaux</th><th>{{ totalDebit | number:'1.2-2' }}</th><th>{{ totalCredit | number:'1.2-2' }}</th><th></th></tr>
-          <tr><th colspan="2">Balance (doit être 0)</th><th colspan="2">{{ (totalDebit - totalCredit) | number:'1.2-2' }}</th><th></th></tr>
+          <tr><th colspan="3">Totaux</th><th>{{ totalDebit | number:'1.2-2' }}</th><th>{{ totalCredit | number:'1.2-2' }}</th><th></th></tr>
+          <tr><th colspan="3">Balance (doit être 0)</th><th colspan="2">{{ (totalDebit - totalCredit) | number:'1.2-2' }}</th><th></th></tr>
         </tfoot>
       </table>
       <datalist id="cpt">
@@ -167,7 +177,8 @@ export class EntriesComponent {
   editingTemplateId: string | null = null;
   templateLines: EcritureLigne[] = [];
 
-  lignes: (EcritureLigne & { _suggest?: { code:string; intitule:string }[]; _active?: number })[] = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
+  lignes: any[] = [];
+  tiers: ThirdParty[] = [];
   totalDebit = 0;
   totalCredit = 0;
   error = '';
@@ -178,10 +189,11 @@ export class EntriesComponent {
   templates: EntryTemplate[] = [];
   editingId: string | null = null;
 
-  constructor(private js: JournalService, private coa: ChartOfAccountsService) {
+  constructor(private js: JournalService, private coa: ChartOfAccountsService, private tiersSvc: TiersService) {
     this.coa.getPlan().subscribe(p => this.comptes = p.map(i => ({ code: i.code, intitule: i.intitule })));
     this.js.getEcritures().subscribe(list => this.ecritures = list);
     this.js.getTemplates().subscribe(ts => { this.templates = ts; this.refreshTemplatesForJournal(); });
+    this.tiersSvc.getAll().subscribe(list => this.tiers = list);
   }
 
   private computeLibelleFromCode(code: string): string {
@@ -252,7 +264,7 @@ export class EntriesComponent {
     this.editingTemplateId = null; this.templateName = ''; this.templateLines = [ { compte:'', libelle:'', debit:0, credit:0 } ];
   }
 
-  addLine() { this.lignes.push({ compte: '', libelle: '', debit: 0, credit: 0 }); }
+  addLine() { this.lignes.push({ compte: '', libelle: '', debit: 0, credit: 0, _suggest: [], _active: 0, _tiersQuery: '', _tiersSuggest: [], _tiersActive: 0 }); }
   removeLine(i: number) { this.lignes.splice(i,1); this.recalc(); }
   recalc() {
     this.totalDebit = this.lignes.reduce((s,l)=>s+(Number(l.debit)||0),0);
@@ -263,11 +275,12 @@ export class EntriesComponent {
     this.error = this.ok = '';
     try {
       if (this.editingId) {
-        const updated: Ecriture = { id: this.editingId, date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes: this.lignes, totalDebit: 0, totalCredit: 0 };
+        const updated: Ecriture = { id: this.editingId, date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes: this.lignes.map(l => ({ ...l })), totalDebit: 0, totalCredit: 0 };
         this.js.updateEcriture(updated);
         this.ok = 'Écriture mise à jour';
       } else {
-        this.js.addEcriture({ date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes: this.lignes });
+        const lignes: EcritureLigne[] = this.lignes.map(l => ({ compte: l.compte, libelle: l.libelle, debit: Number(l.debit)||0, credit: Number(l.credit)||0, ...(l.tiersId?{ tiersId: l.tiersId, tiersName: l.tiersName }: {}) } as any));
+        this.js.addEcriture({ date: this.date, journalCode: this.journalCode, piece: this.piece, reference: this.reference, lignes });
         this.ok = 'Écriture enregistrée';
       }
       this.lignes = [ { compte: '', libelle: '', debit: 0, credit: 0 } ];
@@ -312,6 +325,24 @@ export class EntriesComponent {
     l.compte = s.code;
     if (!l.libelle) l.libelle = this.computeLibelleFromCode(s.code) || s.intitule;
     l._suggest = [];
+  }
+
+  onTiersInput(l: any) {
+    const q = (l._tiersQuery||'').toLowerCase(); if (!q) { l._tiersSuggest = []; l._tiersActive = 0; return; }
+    l._tiersSuggest = this.tiers.filter(t => t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q)).slice(0, 8);
+    l._tiersActive = 0;
+  }
+  onTiersKey(ev: KeyboardEvent, l: any) {
+    if (!l._tiersSuggest?.length) return;
+    const max = l._tiersSuggest.length - 1;
+    if (ev.key === 'ArrowDown') { l._tiersActive = Math.min(max, (l._tiersActive||0)+1); ev.preventDefault(); }
+    else if (ev.key === 'ArrowUp') { l._tiersActive = Math.max(0, (l._tiersActive||0)-1); ev.preventDefault(); }
+    else if (ev.key === 'Enter') { this.pickTiers(l, l._tiersActive||0); ev.preventDefault(); }
+  }
+  pickTiers(l: any, idx: number) {
+    const t = l._tiersSuggest[idx]; if (!t) return;
+    l.tiersId = t.id; l.tiersName = t.name; l._tiersQuery = `${t.code} - ${t.name}`;
+    l._tiersSuggest = []; l._tiersActive = 0;
   }
 
   onCompteChange(l: EcritureLigne) {

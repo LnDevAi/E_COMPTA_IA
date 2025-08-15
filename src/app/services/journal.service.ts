@@ -13,6 +13,8 @@ export interface EcritureLigne {
   libelle: string;
   debit: number;
   credit: number;
+  tiersId?: string;
+  tiersName?: string;
 }
 
 export interface Ecriture {

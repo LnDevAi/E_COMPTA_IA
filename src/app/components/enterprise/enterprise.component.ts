@@ -44,6 +44,8 @@ import { EnterpriseService, EnterpriseIdentity, PlatformSettings, UserAccount, R
           <label>Email<input class="input" [(ngModel)]="identity.email" (change)="saveIdentity()"/></label>
           <label>Téléphone<input class="input" [(ngModel)]="identity.phone" (change)="saveIdentity()"/></label>
           <label>Site web<input class="input" [(ngModel)]="identity.website" (change)="saveIdentity()"/></label>
+          <label>Début exercice (date)<input class="input" type="date" [(ngModel)]="identity.fiscalYearStartDate" (change)="saveIdentity()"/></label>
+          <label>Fin exercice (date)<input class="input" type="date" [(ngModel)]="identity.fiscalYearEndDate" (change)="saveIdentity()"/></label>
           <label>Début exercice (mois 1..12)<input class="input" type="number" min="1" max="12" [(ngModel)]="identity.fiscalYearStartMonth" (change)="saveIdentity()"/></label>
           <label>Dirigeant<input class="input" [(ngModel)]="identity.director" (change)="saveIdentity()"/></label>
           <label>Logo
@@ -178,6 +180,7 @@ import { EnterpriseService, EnterpriseIdentity, PlatformSettings, UserAccount, R
           <input class="input" placeholder="Journal" [(ngModel)]="taxJournal"/>
           <input class="input" placeholder="Compte" [(ngModel)]="taxAccount"/>
           <button class="btn" (click)="addTax()">Ajouter</button>
+          <button class="btn" (click)="regenTaxesFromCountry()">Régénérer depuis le pays</button>
         </div>
         <table class="table">
           <thead><tr><th>Nom</th><th>Catégorie</th><th>Taux</th><th>Période</th><th>Échéance</th><th>Journal</th><th>Compte</th><th></th></tr></thead>
@@ -280,13 +283,26 @@ export class EnterpriseComponent {
   saveSettings() { this.es.updateSettings(this.settings); }
 
   onCountryChange() {
-    const c = this.countries.find(x => x.code === this.settings.app.country);
-    if (!c) return;
-    this.settings.app.defaultCurrency = c.currency;
-    this.settings.app.locale = c.locale;
-    this.settings.app.accountingSystem = c.accountingSystem;
-    this.settings.app.chartOfAccounts = c.chartOfAccounts;
-    this.saveSettings();
+    const selected = this.countries.find(c => c.code === this.settings.app.country);
+    if (selected) {
+      this.settings.app.defaultCurrency = selected.currency;
+      this.settings.app.locale = selected.locale;
+      this.settings.app.accountingSystem = selected.accountingSystem;
+      this.settings.app.chartOfAccounts = selected.chartOfAccounts;
+      this.saveSettings();
+      // Régénération auto des taxes à partir du pays
+      fetch('assets/data/countries-taxes.json').then(r=>r.ok?r.json():null).then(json=>{
+        if (!json || !Array.isArray(json.countriesTaxes)) return;
+        const found = json.countriesTaxes.find((c:any)=>String(c.code).toUpperCase()===String(selected.code).toUpperCase());
+        if (!found || !found.taxes) return;
+        const list: any[] = [];
+        const t = found.taxes;
+        if (t.vat?.standardRate!=null) list.push({ name: t.vat.name||'TVA', category:'FISCAL', rate: Number(t.vat.standardRate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
+        if (t.corporateIncomeTax?.rate!=null) list.push({ name: t.corporateIncomeTax.name||'IS', category:'FISCAL', rate: Number(t.corporateIncomeTax.rate), period:'ANNUEL', dueDay: undefined, journal:'', account:'' });
+        if (t.socialContributions?.employer?.rate!=null && t.socialContributions?.employee?.rate!=null) list.push({ name: 'CNSS (emp+sal)', category:'SOCIAL', rate: Number(t.socialContributions.employer.rate)+Number(t.socialContributions.employee.rate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
+        this.es.replaceAllTaxes(list as any);
+      }).catch(()=>{});
+    }
   }
 
   templateFor(role: RoleName) { return this.es.roleTemplate(role); }
@@ -322,4 +338,19 @@ export class EnterpriseComponent {
     this.dirName = this.dirRole = this.dirEmail = this.dirPhone = '';
   }
   removeDirector(id: string) { this.es.removeDirector(id); }
+
+  regenTaxesFromCountry() {
+    const code = (this.settings?.app?.country||'').toUpperCase(); if (!code) return;
+    fetch('assets/data/countries-taxes.json').then(r=>r.ok?r.json():null).then(json=>{
+      if (!json || !Array.isArray(json.countriesTaxes)) return;
+      const found = json.countriesTaxes.find((c:any)=>String(c.code).toUpperCase()===code);
+      if (!found || !found.taxes) return;
+      const list: any[] = [];
+      const t = found.taxes;
+      if (t.vat?.standardRate!=null) list.push({ name: t.vat.name||'TVA', category:'FISCAL', rate: Number(t.vat.standardRate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
+      if (t.corporateIncomeTax?.rate!=null) list.push({ name: t.corporateIncomeTax.name||'IS', category:'FISCAL', rate: Number(t.corporateIncomeTax.rate), period:'ANNUEL', dueDay: undefined, journal:'', account:'' });
+      if (t.socialContributions?.employer?.rate!=null && t.socialContributions?.employee?.rate!=null) list.push({ name: 'CNSS (emp+sal)', category:'SOCIAL', rate: Number(t.socialContributions.employer.rate)+Number(t.socialContributions.employee.rate), period:'MENSUEL', dueDay: undefined, journal:'', account:'' });
+      this.es.replaceAllTaxes(list as any);
+    }).catch(()=>{});
+  }
 }

@@ -36,6 +36,7 @@ export class FilterJournalPipe implements PipeTransform {
         <button class="btn" (click)="exportJournaux()">Export CSV Journaux</button>
         <button class="btn" (click)="exportJournauxExcel()">Export Excel</button>
         <button class="btn" (click)="exportJournauxPdf()">Export PDF</button>
+        <button class="btn" (click)="generateDemoData()">Générer données démo</button>
       </div>
       <div *ngIf="err" class="err">{{ err }}</div>
       <div *ngIf="ok" class="ok">{{ ok }}</div>
@@ -220,6 +221,87 @@ export class JournalsComponent {
     for (const e of rows) win.document.write(`<tr><td>${e.id}</td><td>${e.date}</td><td>${e.journalCode}</td><td>${escapeHtml(e.piece||'')}</td><td>${escapeHtml(e.reference||'')}</td><td>${e.totalDebit}</td><td>${e.totalCredit}</td></tr>`);
     win.document.write('</tbody></table></body></html>');
     win.document.close(); win.print();
+  }
+
+  generateDemoData() {
+    this.err = this.ok = '';
+    const today = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0,10);
+    const addDays = (n: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate()-n);
+    const entries: Array<Omit<Ecriture,'id'|'totalDebit'|'totalCredit'>> = [];
+
+    // Vente: 701/4457 contre 411, puis règlement 512
+    const d1 = addDays(30);
+    entries.push({
+      date: iso(d1), journalCode: 'VEN', piece: 'FAC-001', reference: 'Vente produits',
+      lignes: [
+        { compte: '411', libelle: 'Client X', debit: 118000, credit: 0 },
+        { compte: '701', libelle: 'Vente', debit: 0, credit: 100000 },
+        { compte: '4457', libelle: 'TVA collectée', debit: 0, credit: 18000 }
+      ]
+    });
+    const d2 = addDays(25);
+    entries.push({
+      date: iso(d2), journalCode: 'BNK', piece: 'REC-001', reference: 'Règlement client X',
+      lignes: [
+        { compte: '512', libelle: 'Banque', debit: 118000, credit: 0 },
+        { compte: '411', libelle: 'Client X', debit: 0, credit: 118000 }
+      ]
+    });
+
+    // Achat: 607/44566 contre 401, puis paiement 512
+    const d3 = addDays(20);
+    entries.push({
+      date: iso(d3), journalCode: 'ACH', piece: 'ACH-001', reference: 'Achat marchandises',
+      lignes: [
+        { compte: '607', libelle: 'Achats', debit: 50000, credit: 0 },
+        { compte: '44566', libelle: 'TVA déductible', debit: 9000, credit: 0 },
+        { compte: '401', libelle: 'Fournisseur Y', debit: 0, credit: 59000 }
+      ]
+    });
+    const d4 = addDays(15);
+    entries.push({
+      date: iso(d4), journalCode: 'BNK', piece: 'PAI-001', reference: 'Paiement fournisseur Y',
+      lignes: [
+        { compte: '401', libelle: 'Fournisseur Y', debit: 59000, credit: 0 },
+        { compte: '512', libelle: 'Banque', debit: 0, credit: 59000 }
+      ]
+    });
+
+    // Salaires
+    const d5 = addDays(10);
+    entries.push({
+      date: iso(d5), journalCode: 'SAL', piece: 'PAY-001', reference: 'Salaire mois',
+      lignes: [
+        { compte: '641', libelle: 'Charges salaires', debit: 80000, credit: 0 },
+        { compte: '421', libelle: 'Rémunérations dues', debit: 0, credit: 80000 }
+      ]
+    });
+    const d6 = addDays(7);
+    entries.push({
+      date: iso(d6), journalCode: 'BNK', piece: 'VIR-001', reference: 'Virement salaires',
+      lignes: [
+        { compte: '421', libelle: 'Rémunérations dues', debit: 80000, credit: 0 },
+        { compte: '512', libelle: 'Banque', debit: 0, credit: 80000 }
+      ]
+    });
+
+    // OD: amortissement simple
+    const d7 = addDays(5);
+    entries.push({
+      date: iso(d7), journalCode: 'OD', piece: 'AMO-001', reference: 'Dotations amortissements',
+      lignes: [
+        { compte: '6811', libelle: 'Dotations', debit: 10000, credit: 0 },
+        { compte: '281', libelle: 'Amortissements', debit: 0, credit: 10000 }
+      ]
+    });
+
+    try {
+      for (const e of entries) this.js.addEcriture(e);
+      this.ok = 'Données de démonstration générées';
+    } catch (e: any) {
+      this.err = e?.message || 'Erreur lors de la génération';
+    }
   }
 
   private download(blob: Blob, name: string) {

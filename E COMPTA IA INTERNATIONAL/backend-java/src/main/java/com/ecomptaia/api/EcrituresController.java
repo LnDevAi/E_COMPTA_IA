@@ -103,7 +103,7 @@ public class EcrituresController {
     private String genId(String p) { return p+"-"+System.currentTimeMillis()+"-"+(int)(Math.random()*1e4); }
 
     @Data
-    public static class Ligne { private String compte; private String libelle; private double debit; private double credit; }
+    public static class Ligne { private String compte; private String libelle; private double debit; private double credit; private String tiersId; private String tiersName; }
     @Data
     public static class Ecriture {
         private String id; private String date; private String journalCode; private String piece; private String reference;

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { JournalService, Ecriture, EcritureLigne, EntryTemplate } from '../../services/journal.service';
 import { ChartOfAccountsService } from '../../services/chart-of-accounts.service';
 import { TiersService, ThirdParty } from '../../services/tiers.service';
+import { AiService } from '../../services/ai.service';
 
 @Component({
   selector: 'app-entries',
@@ -37,7 +38,7 @@ import { TiersService, ThirdParty } from '../../services/tiers.service';
 
         <button class="btn" (click)="addLine()">Ajouter ligne</button>
         <button class="btn" (click)="saveEntry()">Enregistrer</button>
-        <button class="btn" (click)="exportCsv()">Export CSV</button>
+        <button class="btn" (click)="openAiPaste()">IA: coller texte OCR</button>
       </div>
 
       <!-- Template editor modal -->
@@ -76,6 +77,19 @@ import { TiersService, ThirdParty } from '../../services/tiers.service';
           <div class="modal-actions">
             <button class="btn" (click)="templateEditorOpen=false">Fermer</button>
           </div>
+        </div>
+      </div>
+
+      <!-- AI Paste modal -->
+      <div class="modal" *ngIf="aiModalOpen">
+        <div class="modal-body">
+          <h3>Assistant IA — Coller le texte OCR</h3>
+          <textarea class="input" style="width:100%;height:180px" [(ngModel)]="aiText"></textarea>
+          <div class="modal-actions">
+            <button class="btn" (click)="applyAi()">Proposer</button>
+            <button class="btn" (click)="aiModalOpen=false">Fermer</button>
+          </div>
+          <div *ngIf="aiErr" class="err">{{ aiErr }}</div>
         </div>
       </div>
 
@@ -189,7 +203,11 @@ export class EntriesComponent {
   templates: EntryTemplate[] = [];
   editingId: string | null = null;
 
-  constructor(private js: JournalService, private coa: ChartOfAccountsService, private tiersSvc: TiersService) {
+  aiModalOpen = false;
+  aiText = '';
+  aiErr = '';
+
+  constructor(private js: JournalService, private coa: ChartOfAccountsService, private tiersSvc: TiersService, private ai: AiService) {
     this.coa.getPlan().subscribe(p => this.comptes = p.map(i => ({ code: i.code, intitule: i.intitule })));
     this.js.getEcritures().subscribe(list => this.ecritures = list);
     this.js.getTemplates().subscribe(ts => { this.templates = ts; this.refreshTemplatesForJournal(); });
@@ -360,5 +378,25 @@ export class EntriesComponent {
   }
   del(id: string) {
     if (confirm('Supprimer cette écriture ?')) this.js.deleteEcriture(id);
+  }
+
+  openAiPaste() { this.aiErr=''; this.aiText=''; this.aiModalOpen = true; }
+  applyAi() {
+    this.aiErr='';
+    const t = (this.aiText||'').trim();
+    if (!t) { this.aiErr = 'Veuillez coller le texte OCR.'; return; }
+    this.ai.parseText({ text: t }).subscribe({
+      next: (res: any) => {
+        const best = (res?.suggestions||[]).sort((a:any,b:any)=> (b.confidence||0)-(a.confidence||0))[0];
+        if (!best) { this.aiErr = 'Aucune suggestion.'; return; }
+        this.journalCode = best.journalCode || this.journalCode;
+        this.piece = best.piece || this.piece;
+        this.date = best.date || this.date;
+        this.lignes = (best.lines||[]).map((l:any)=>({ compte:l.compte, libelle:l.libelle, debit:l.debit||0, credit:l.credit||0 }));
+        this.recalc();
+        this.aiModalOpen = false;
+      },
+      error: (e:any) => { this.aiErr = 'Erreur IA'; }
+    });
   }
 }

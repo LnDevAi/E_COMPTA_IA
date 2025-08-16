@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { JournalService, Ecriture } from '../../services/journal.service';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
 	selector: 'app-financial-statements',
@@ -64,33 +65,81 @@ export class FinancialStatementsComponent {
 	computed = false;
 	produits = 0; charges = 0; resultat = 0;
 	act_imm = 0; act_sto = 0; act_tres = 0; pas_cap = 0; pas_tiers = 0;
+	mapping: any = null;
 
-	constructor(private js: JournalService) {}
+	constructor(private js: JournalService, private http: HttpClient) {
+		this.http.get('/assets/specs/etats/mapping-ohada.json').subscribe(m => this.mapping = m);
+	}
 
 	compute() {
 		const ecritures: Ecriture[] = (this.js as any).ecritures$?.value || [];
 		const within = (d: string) => d >= this.from && d <= this.to;
-		let prod = 0, chg = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0;
 		const sums = new Map<string, number>();
 		for (const e of ecritures) {
 			if (!within(e.date)) continue;
 			for (const l of e.lignes) {
 				const code = String(l.compte||''); if (!code) continue;
 				const delta = (Number(l.debit)||0) - (Number(l.credit)||0);
-				const cls = code[0];
-				if (cls === '7') prod += -delta; // produits: crédits - débits
-				else if (cls === '6') chg += delta; // charges: débits - crédits
-				else if (cls === '1') c1 += -delta; // passif/CP (crédit = +)
-				else if (cls === '2') c2 += delta; // actif immobilisé
-				else if (cls === '3') c3 += delta; // stocks
-				else if (cls === '4') c4 += delta; // tiers (net)
-				else if (cls === '5') c5 += delta; // trésorerie (banque/caisse)
-				const prev = sums.get(code)||0; sums.set(code, prev+delta);
+				sums.set(code, (sums.get(code)||0) + delta);
 			}
 		}
+		if (this.mapping) {
+			const getByRange = (expr: string): string[] => {
+				if (expr.includes('-')) { const [a,b] = expr.split('-'); return expandRange(a,b); }
+				return [expr];
+			};
+			const expandRange = (a: string, b: string): string[] => {
+				const res: string[] = []; const len = Math.max(a.length,b.length);
+				const start = parseInt(a.padEnd(len,'0')); const end = parseInt(b.padEnd(len,'9'));
+				for (const [code,] of sums) {
+					const num = parseInt(code); if (!isNaN(num) && num>=start && num<=end) res.push(code);
+				}
+				return res;
+			};
+			const pick = (accExprs: string[], sense: 'debit'|'credit'|'credit-sign'|'debit-sign'): number => {
+				let total = 0;
+				const allCodes = accExprs.flatMap(getByRange);
+				for (const code of new Set(allCodes)) {
+					const v = sums.get(code)||0; // v>0 => débit net, v<0 => crédit net
+					if (sense==='debit') total += Math.max(0, v);
+					else if (sense==='credit') total += Math.max(0, -v);
+					else if (sense==='debit-sign') total += v; else if (sense==='credit-sign') total += -v;
+				}
+				return total;
+			};
+			// Compte de résultat
+			let prod = 0, chg = 0;
+			for (const it of this.mapping.incomeStatement||[]) {
+				const sense = it.polarity==='credit' ? 'credit' : 'debit';
+				const val = pick(it.accounts||[], sense as any);
+				if (it.polarity==='credit') prod += val; else chg += val;
+			}
+			this.produits = prod; this.charges = chg; this.resultat = prod - chg;
+			// Bilan
+			const aImm = pick(this.mapping.balanceSheet.assets[0].accounts, 'debit');
+			const aSto = pick(this.mapping.balanceSheet.assets[1].accounts, 'debit');
+			const aCli = pick(this.mapping.balanceSheet.assets[2].accounts, 'debit');
+			const aTre = pick(this.mapping.balanceSheet.assets[3].accounts, 'debit');
+			const pCap = pick(this.mapping.balanceSheet.liabilities[0].accounts, 'credit');
+			const pDet = pick(this.mapping.balanceSheet.liabilities[1].accounts, 'credit');
+			const pTre = pick(this.mapping.balanceSheet.liabilities[2].accounts, 'credit');
+			this.act_imm = aImm; this.act_sto = aSto; this.act_tres = aTre; this.pas_cap = pCap; this.pas_tiers = pDet;
+			this.computed = true; return;
+		}
+		// fallback ancien mode
+		let prod = 0, chg = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0;
+		for (const [code, val] of sums) {
+			const cls = code[0];
+			if (cls === '7') prod += Math.max(0, -val);
+			else if (cls === '6') chg += Math.max(0, val);
+			else if (cls === '1') c1 += Math.max(0, -val);
+			else if (cls === '2') c2 += Math.max(0, val);
+			else if (cls === '3') c3 += Math.max(0, val);
+			else if (cls === '4') c4 += val;
+			else if (cls === '5') c5 += Math.max(0, val);
+		}
 		this.produits = prod; this.charges = chg; this.resultat = prod - chg;
-		this.act_imm = c2; this.act_sto = c3; this.act_tres = c5;
-		this.pas_cap = c1; this.pas_tiers = -c4; // tiers côté passif net
+		this.act_imm = c2; this.act_sto = c3; this.act_tres = c5; this.pas_cap = c1; this.pas_tiers = Math.max(0, -c4);
 		this.computed = true;
 	}
 

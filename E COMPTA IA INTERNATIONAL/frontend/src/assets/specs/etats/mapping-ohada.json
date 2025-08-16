@@ -1,0 +1,28 @@
+{
+	"incomeStatement": [
+		{ "label": "Chiffre d'affaires", "accounts": ["70-75"], "polarity": "credit" },
+		{ "label": "Autres produits d'exploitation", "accounts": ["75"], "polarity": "credit" },
+		{ "label": "Produits financiers", "accounts": ["76"], "polarity": "credit" },
+		{ "label": "Produits exceptionnels", "accounts": ["77"], "polarity": "credit" },
+		{ "label": "Achats et charges externes", "accounts": ["60-62"], "polarity": "debit" },
+		{ "label": "Charges de personnel", "accounts": ["64"], "polarity": "debit" },
+		{ "label": "Impôts et taxes", "accounts": ["63","69"], "polarity": "debit" },
+		{ "label": "Dotations aux amortissements", "accounts": ["68"], "polarity": "debit" },
+		{ "label": "Charges financières", "accounts": ["66"], "polarity": "debit" },
+		{ "label": "Charges exceptionnelles", "accounts": ["67"], "polarity": "debit" }
+	],
+	"balanceSheet": {
+		"assets": [
+			{ "label": "Immobilisations", "accounts": ["20-29"], "side": "debit" },
+			{ "label": "Stocks et encours", "accounts": ["30-39"], "side": "debit" },
+			{ "label": "Créances clients", "accounts": ["41"], "side": "debit" },
+			{ "label": "Trésorerie active", "accounts": ["50-58"], "side": "debit" }
+		],
+		"liabilities": [
+			{ "label": "Capitaux propres", "accounts": ["10-19"], "side": "credit" },
+			{ "label": "Dettes financières et diverses", "accounts": ["40-49"], "side": "credit" },
+			{ "label": "Trésorerie passive", "accounts": ["50-58"], "side": "credit" }
+		]
+	},
+	"rules": { "rangesAreInclusive": true, "netBySign": true, "preferExactOverRange": true }
+}

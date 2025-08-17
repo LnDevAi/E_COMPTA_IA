@@ -33,6 +33,14 @@ public class EcrituresController {
         return ResponseEntity.status(201).body(e);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) throws IOException {
+        List<Ecriture> items = load();
+        boolean changed = items.removeIf(x -> id.equals(x.getId()));
+        if (changed) save(items);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/demo")
     public Map<String,Object> generateDemo() throws IOException {
         List<Ecriture> items = load();

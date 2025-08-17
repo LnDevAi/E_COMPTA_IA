@@ -1,118 +1,74 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, tap, map } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
 export interface Journal {
-  code: string; // ACH, VEN, BNK, OD, SAL, CSH, etc.
-  libelle: string; // Achats, Ventes, Banque, Opérations diverses, Salaires, Caisses
+  code: string;
+  libelle: string;
   type: 'ACHATS' | 'VENTES' | 'BANQUE' | 'OD' | 'SALAIRES' | 'CAISSES' | 'MONNAIE_ELECTRONIQUE' | 'AUTRE';
 }
 
-export interface EcritureLigne {
-  compte: string;
-  libelle: string;
-  debit: number;
-  credit: number;
-  tiersId?: string;
-  tiersName?: string;
-}
-
+export interface EcritureLigne { compte: string; libelle: string; debit: number; credit: number; tiersId?: string; tiersName?: string; }
 export interface Ecriture {
-  id: string;
-  date: string; // ISO yyyy-mm-dd
-  journalCode: string;
-  piece?: string;
-  reference?: string;
-  lignes: EcritureLigne[];
-  totalDebit: number;
-  totalCredit: number;
+  id: string; date: string; journalCode: string; piece?: string; reference?: string;
+  lignes: EcritureLigne[]; totalDebit: number; totalCredit: number;
 }
-
-export interface EntryTemplate {
-  id: string;
-  journalCode: string;
-  name: string;
-  lignes: EcritureLigne[];
-}
+export interface EntryTemplate { id: string; journalCode: string; name: string; lignes: EcritureLigne[]; }
 
 @Injectable({ providedIn: 'root' })
 export class JournalService {
   readonly api = environment.apiUrl;
 
-  private readonly defaultJournaux: Journal[] = [
-    { code: 'ACH', libelle: 'Achats', type: 'ACHATS' },
-    { code: 'VEN', libelle: 'Ventes', type: 'VENTES' },
-    { code: 'BNK', libelle: 'Banque', type: 'BANQUE' },
-    { code: 'OD',  libelle: 'Opérations diverses', type: 'OD' },
-    { code: 'SAL', libelle: 'Salaires', type: 'SALAIRES' },
-    { code: 'CSH', libelle: 'Caisses', type: 'CAISSES' },
-    { code: 'MNE', libelle: 'Monnaie électronique', type: 'MONNAIE_ELECTRONIQUE' }
-  ];
-
-  private readonly journaux$ = new BehaviorSubject<Journal[]>([...this.defaultJournaux]);
+  private readonly journaux$ = new BehaviorSubject<Journal[]>([]);
   private readonly ecritures$ = new BehaviorSubject<Ecriture[]>([]);
   private readonly templates$ = new BehaviorSubject<EntryTemplate[]>(this.loadTemplates());
 
+  constructor(private http: HttpClient) {
+    this.refreshJournaux(); this.refreshEcritures();
+  }
+
+  // Observables
   getJournaux() { return this.journaux$.asObservable(); }
   getEcritures() { return this.ecritures$.asObservable(); }
   getTemplates() { return this.templates$.asObservable(); }
 
-  addJournal(j: Journal) {
-    const exists = this.journaux$.value.some(x => x.code === j.code);
-    if (exists) throw new Error('Code journal déjà existant');
-    this.journaux$.next([...this.journaux$.value, j]);
+  // Backend calls
+  refreshJournaux() {
+    this.http.get<{items: Journal[]}>(`${this.api}/api/journaux`).subscribe({ next: r => this.journaux$.next(r.items||[]) });
   }
-
-  updateJournal(code: string, update: Partial<Pick<Journal, 'libelle'|'type'>>) {
-    this.journaux$.next(this.journaux$.value.map(j => j.code === code ? { ...j, ...update, code: j.code } : j));
+  createJournal(j: Journal) {
+    return this.http.post<Journal>(`${this.api}/api/journaux`, j).pipe(tap(()=>this.refreshJournaux())).subscribe();
   }
-
+  updateJournal(code: string, patch: Partial<Pick<Journal,'libelle'|'type'>>) {
+    return this.http.put<Journal>(`${this.api}/api/journaux/${encodeURIComponent(code)}`, patch).pipe(tap(()=>this.refreshJournaux())).subscribe();
+  }
   removeJournal(code: string) {
-    this.journaux$.next(this.journaux$.value.filter(j => j.code !== code));
-    // Option: supprimer les écritures liées
-    this.ecritures$.next(this.ecritures$.value.filter(e => e.journalCode !== code));
-    // Supprimer les modèles liés
-    const next = this.templates$.value.filter(t => t.journalCode !== code);
-    this.templates$.next(next); this.persistTemplates(next);
+    return this.http.delete<void>(`${this.api}/api/journaux/${encodeURIComponent(code)}`).pipe(tap(()=>this.refreshJournaux())).subscribe();
   }
 
-  addEcriture(e: Omit<Ecriture, 'id'|'totalDebit'|'totalCredit'>) {
-    const totalDebit = e.lignes.reduce((s,l)=>s+(Number(l.debit)||0),0);
-    const totalCredit = e.lignes.reduce((s,l)=>s+(Number(l.credit)||0),0);
-    if (Math.round((totalDebit-totalCredit)*100) !== 0) throw new Error('Écriture non équilibrée');
-    const id = `${e.journalCode}-${Date.now()}`;
-    const saved: Ecriture = { ...e, id, totalDebit, totalCredit };
-    this.ecritures$.next([...this.ecritures$.value, saved]);
+  refreshEcritures() {
+    this.http.get<{items: Ecriture[]}>(`${this.api}/api/ecritures`).subscribe({ next: r => this.ecritures$.next(r.items||[]) });
   }
-
-  addEcrituresBatch(entries: Array<Omit<Ecriture, 'totalDebit'|'totalCredit'>>) {
-    const next: Ecriture[] = [...this.ecritures$.value];
-    for (const e of entries) {
-      const totalDebit = e.lignes.reduce((s,l)=>s+(Number(l.debit)||0),0);
-      const totalCredit = e.lignes.reduce((s,l)=>s+(Number(l.credit)||0),0);
-      if (Math.round((totalDebit-totalCredit)*100) !== 0) continue;
-      next.push({ ...e, totalDebit, totalCredit });
-    }
-    this.ecritures$.next(next);
+  addEcriture(e: Omit<Ecriture,'id'|'totalDebit'|'totalCredit'>) {
+    return this.http.post<Ecriture>(`${this.api}/api/ecritures`, e).pipe(tap(()=>this.refreshEcritures())).subscribe();
   }
-
+  addEcrituresBatch(entries: Array<Omit<Ecriture,'totalDebit'|'totalCredit'>>) {
+    // Pas d'endpoint batch pour l'instant: on envoie une par une
+    for (const e of entries) this.http.post(`${this.api}/api/ecritures`, e).subscribe({ next: ()=>this.refreshEcritures() });
+  }
   deleteEcriture(id: string) {
-    this.ecritures$.next(this.ecritures$.value.filter(x => x.id !== id));
+    return this.http.delete<void>(`${this.api}/api/ecritures/${encodeURIComponent(id)}`).pipe(tap(()=>this.refreshEcritures())).subscribe();
   }
-
-  getEcriture(id: string): Ecriture | undefined {
-    return this.ecritures$.value.find(x => x.id === id);
-  }
-
+  getEcriture(id: string) { return this.ecritures$.value.find(x => x.id === id); }
   updateEcriture(updated: Ecriture) {
-    const totalDebit = updated.lignes.reduce((s,l)=>s+(Number(l.debit)||0),0);
-    const totalCredit = updated.lignes.reduce((s,l)=>s+(Number(l.credit)||0),0);
-    if (Math.round((totalDebit-totalCredit)*100) !== 0) throw new Error('Écriture non équilibrée');
-    updated.totalDebit = totalDebit; updated.totalCredit = totalCredit;
-    this.ecritures$.next(this.ecritures$.value.map(e => e.id === updated.id ? { ...updated } : e));
+    // Simplification: re-post en supprimant puis ajoutant (pas d'endpoint PUT pour l'instant)
+    this.deleteEcriture(updated.id);
+    const { id, totalDebit, totalCredit, ...payload } = updated as any;
+    this.addEcriture(payload);
   }
 
-  // Templates CRUD
+  // Templates (localStorage)
   createTemplate(journalCode: string, name: string, lignes: EcritureLigne[]): EntryTemplate {
     const id = `${journalCode}-${Date.now()}`;
     const tpl: EntryTemplate = { id, journalCode, name, lignes: lignes.map(l => ({ ...l })) };
@@ -120,32 +76,16 @@ export class JournalService {
     this.templates$.next(next); this.persistTemplates(next);
     return tpl;
   }
-
   updateTemplate(id: string, name: string, lignes: EcritureLigne[]): void {
     const next = this.templates$.value.map(t => t.id === id ? { ...t, name, lignes: lignes.map(l => ({ ...l })) } : t);
     this.templates$.next(next); this.persistTemplates(next);
   }
-
   deleteTemplate(id: string): void {
     const next = this.templates$.value.filter(t => t.id !== id);
     this.templates$.next(next); this.persistTemplates(next);
   }
-
-  private loadTemplates(): EntryTemplate[] {
-    try {
-      const raw = localStorage.getItem('ecompta_templates_v1');
-      if (!raw) return [];
-      const arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return [];
-      return arr as EntryTemplate[];
-    } catch {
-      return [];
-    }
-  }
-
-  private persistTemplates(list: EntryTemplate[]): void {
-    try { localStorage.setItem('ecompta_templates_v1', JSON.stringify(list)); } catch {}
-  }
+  private loadTemplates(): EntryTemplate[] { try { const raw = localStorage.getItem('ecompta_templates_v1'); return raw? JSON.parse(raw) : []; } catch { return []; } }
+  private persistTemplates(list: EntryTemplate[]): void { try { localStorage.setItem('ecompta_templates_v1', JSON.stringify(list)); } catch {} }
 
   // Exports
   exportJournauxCsv(): Blob {
@@ -153,20 +93,15 @@ export class JournalService {
     const lines = this.journaux$.value.map(j => [j.code, this.csv(j.libelle), j.type].join(';'));
     return new Blob(["\uFEFF" + [header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
   }
-
   exportEcrituresCsv(filterJournal?: string): Blob {
     const header = 'id;date;journal;piece;reference;compte;libelle;debit;credit';
     const rows: string[] = [];
     for (const e of this.ecritures$.value) {
       if (filterJournal && e.journalCode !== filterJournal) continue;
-      for (const l of e.lignes) {
-        rows.push([e.id, e.date, e.journalCode, e.piece||'', e.reference||'', l.compte, this.csv(l.libelle), l.debit, l.credit].join(';'));
-      }
+      for (const l of e.lignes) rows.push([e.id, e.date, e.journalCode, e.piece||'', e.reference||'', l.compte, this.csv(l.libelle), l.debit, l.credit].join(';'));
     }
     return new Blob(["\uFEFF" + [header, ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
   }
-
   exportHtmlTableExcel(html: string): Blob { return new Blob([html], { type: 'application/vnd.ms-excel' }); }
-
   private csv(v: string) { return (v?.includes(';')||v?.includes('"')) ? '"'+v.replace(/"/g,'""')+'"' : v; }
 }

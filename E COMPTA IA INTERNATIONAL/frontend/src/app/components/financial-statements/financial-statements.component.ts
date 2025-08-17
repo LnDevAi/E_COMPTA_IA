@@ -16,6 +16,7 @@ import { HttpClient } from '@angular/common/http';
 				<label>Au <input class="input" type="date" [(ngModel)]="to"/></label>
 				<button class="btn" (click)="compute()">Calculer</button>
 				<button class="btn" (click)="exportCsv()" [disabled]="!computed">Export CSV</button>
+				<button class="btn" (click)="exportPdf()" [disabled]="!computed">Export PDF</button>
 			</div>
 
 			<div class="panel" *ngIf="computed">
@@ -157,5 +158,32 @@ export class FinancialStatementsComponent {
 		].map(r => r.join(';'));
 		const blob = new Blob(["\uFEFF" + [header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
 		const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'etats-financiers.csv'; a.click(); URL.revokeObjectURL(url);
+	}
+
+	async exportPdf() {
+		const { default: jsPDF } = await import('jspdf');
+		const autoTable = (await import('jspdf-autotable')).default as any;
+		const doc = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+		const margin = 36; let y = margin;
+		doc.setFontSize(14); doc.text('États Financiers (Période: ' + this.from + ' → ' + this.to + ')', margin, y); y += 18;
+
+		// Compte de résultat
+		doc.setFontSize(12); doc.text('Compte de Résultat', margin, y); y += 12;
+		autoTable(doc, { startY: y, head: [['Rubrique','Montant']], body: [
+			['Total Produits', this.produits.toFixed(2)],
+			['Total Charges', this.charges.toFixed(2)],
+			['Résultat Net', this.resultat.toFixed(2)]
+		], styles: { fontSize: 10 }, margin: { left: margin, right: margin } });
+		y = (doc as any).lastAutoTable.finalY + 16;
+
+		// Bilan
+		doc.setFontSize(12); doc.text('Bilan Simplifié', margin, y); y += 12;
+		autoTable(doc, { startY: y, head: [['Actif','Montant','Passif','Montant']], body: [
+			['Immobilisations', this.act_imm.toFixed(2), 'Capitaux & Passifs LT', this.pas_cap.toFixed(2)],
+			['Stocks', this.act_sto.toFixed(2), 'Tiers', this.pas_tiers.toFixed(2)],
+			['Trésorerie', this.act_tres.toFixed(2), 'Résultat', this.resultat.toFixed(2)]
+		], styles: { fontSize: 10 }, margin: { left: margin, right: margin } });
+
+		doc.save('etats-financiers.pdf');
 	}
 }

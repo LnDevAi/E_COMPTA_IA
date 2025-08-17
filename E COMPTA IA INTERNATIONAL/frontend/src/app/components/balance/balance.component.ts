@@ -32,6 +32,7 @@ interface BalanceRow {
 				<button class="btn" (click)="compute()">Calculer</button>
 				<button class="btn" (click)="exportCsv()">Export CSV</button>
 				<button class="btn" (click)="exportExcel()">Export Excel</button>
+				<button class="btn" (click)="exportPdf()" [disabled]="!rows.length">Export PDF</button>
 				<input type="file" accept=".csv" (change)="onImportOpeningBalances($event)"/>
 			</div>
 
@@ -178,4 +179,29 @@ export class BalanceComponent {
 	private csv(v: string) { return (v?.includes(';')||v?.includes('"')) ? '"'+v.replace(/"/g,'""')+'"' : v; }
 	private downloadBlob(b: Blob, name: string) { const url = URL.createObjectURL(b); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url); }
 	private escapeHtml(s: string) { return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c] as string)); }
+
+	async exportPdf() {
+		const { default: jsPDF } = await import('jspdf');
+		const autoTable = (await import('jspdf-autotable')).default as any;
+		const doc = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
+		const margin = 24; let y = margin;
+		doc.setFontSize(14); doc.text(`Balance (${this.format} colonnes) — ${this.from} → ${this.to}`, margin, y); y += 16;
+		const head: string[] = ['Compte','Intitulé'];
+		if (this.format==='6') { head.push('SA Débit','SA Crédit'); }
+		if (this.format!=='2') { head.push('Mvt Débit','Mvt Crédit'); }
+		head.push('Solde Débit','Solde Crédit');
+		const body = this.rows.map(r => {
+			const arr: any[] = [r.compte, r.intitule];
+			if (this.format==='6') { arr.push(r.prevDebit.toFixed(2), r.prevCredit.toFixed(2)); }
+			if (this.format!=='2') { arr.push(r.movDebit.toFixed(2), r.movCredit.toFixed(2)); }
+			arr.push(r.endDebit.toFixed(2), r.endCredit.toFixed(2));
+			return arr;
+		});
+		autoTable(doc, { startY: y, head: [head], body, styles: { fontSize: 9 }, margin: { left: margin, right: margin } });
+		// Totaux
+		const y2 = (doc as any).lastAutoTable.finalY + 10;
+		doc.setFontSize(11);
+		doc.text(`Totaux: ${this.format==='6'?`SA D ${this.total.prevDebit.toFixed(2)} / SA C ${this.total.prevCredit.toFixed(2)} — `:''}${this.format!=='2'?`Mvts D ${this.total.movDebit.toFixed(2)} / Mvts C ${this.total.movCredit.toFixed(2)} — `:''}Solde D ${this.total.endDebit.toFixed(2)} / Solde C ${this.total.endCredit.toFixed(2)}`, margin, y2);
+		doc.save('balance.pdf');
+	}
 }

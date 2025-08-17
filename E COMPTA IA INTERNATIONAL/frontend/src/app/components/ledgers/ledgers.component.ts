@@ -18,6 +18,7 @@ interface LedgerLine { date: string; journal: string; piece?: string; reference?
 				<label>Au <input class="input" type="date" [(ngModel)]="to"/></label>
 				<button class="btn" (click)="compute()">Afficher</button>
 				<button class="btn" (click)="exportCsv()" [disabled]="!lines.length">Export CSV</button>
+				<button class="btn" (click)="exportPdf()" [disabled]="!lines.length">Export PDF</button>
 			</div>
 
 			<div class="panel" *ngIf="lines.length">
@@ -78,4 +79,20 @@ export class LedgersComponent {
 		const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'grand-livre.csv'; a.click(); URL.revokeObjectURL(url);
 	}
 	private csv(v: string) { return (v?.includes(';')||v?.includes('"')) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+
+	async exportPdf() {
+		const { default: jsPDF } = await import('jspdf');
+		const autoTable = (await import('jspdf-autotable')).default as any;
+		const doc = new jsPDF({ orientation: 'l', unit: 'pt', format: 'a4' });
+		const margin = 32; let y = margin;
+		doc.setFontSize(14); doc.text(`Grand Livre — Compte ${this.compte || 'Tous'} ( ${this.from} → ${this.to} )`, margin, y); y += 16;
+		autoTable(doc, {
+			startY: y,
+			head: [['Date','Journal','Pièce','Réf','Libellé','Débit','Crédit','Solde']],
+			body: this.lines.map(l => [l.date,l.journal,l.piece||'',l.reference||'',l.libelle,(l.debit||0).toFixed(2),(l.credit||0).toFixed(2),(l.balance||0).toFixed(2)]),
+			styles: { fontSize: 9 },
+			margin: { left: margin, right: margin }
+		});
+		doc.save('grand-livre.pdf');
+	}
 }

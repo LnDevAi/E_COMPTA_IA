@@ -18,7 +18,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_err()  { echo -e "${RED}[ERR]${NC}  $*"; }
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-vps_dir="${script_dir}/vps"
+vps_dir="${script_dir}/local_deploy"
 frontend_dir="${script_dir}/frontend"
 backend_dir="${script_dir}/backend-java"
 
@@ -56,7 +56,7 @@ build_frontend() {
   npm run build
   cd - >/dev/null
 
-  # Copier le build vers le répertoire servi par Nginx dans le compose VPS
+  # Copier le build vers le répertoire servi par Nginx dans le compose local
   local target_dir="${vps_dir}/frontend/e-compta-ia"
   mkdir -p "${target_dir}"
   rm -rf "${target_dir}"/*

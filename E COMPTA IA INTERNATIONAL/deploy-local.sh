@@ -18,7 +18,7 @@ log_warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
 log_err()  { echo -e "${RED}[ERR]${NC}  $*"; }
 
 script_dir="$(cd "$(dirname "$0")" && pwd)"
-vps_dir="${script_dir}/vps"
+vps_dir="${script_dir}/local_deploy"
 frontend_dir="${script_dir}/frontend"
 backend_dir="${script_dir}/backend-java"
 

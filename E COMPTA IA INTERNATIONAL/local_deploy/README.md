@@ -1,4 +1,4 @@
-# Déploiement VPS E-COMPTA-IA
+# Déploiement local E-COMPTA-IA
 
 - Backend Java (Spring Boot): conteneur `api` (port interne 8080)
 - Nginx: conteneur `web` (port interne 80)
@@ -7,8 +7,8 @@
 
 ## Préparation
 
-1) Copier le dossier `E COMPTA IA INTERNATIONAL/vps/` sur le VPS (MobaXterm/SFTP)
-2) Placer le build Angular dans `vps/frontend/e-compta-ia/`
+1) Utiliser le dossier `E COMPTA IA INTERNATIONAL/local_deploy/`
+2) Placer le build Angular dans `local_deploy/frontend/e-compta-ia/`
 3) Choisir les ports via `.env` (facultatif). Exemple:
 ```
 ECOMPTA_API_PORT=18080
@@ -16,7 +16,7 @@ ECOMPTA_WEB_PORT=18081
 ```
 4) Démarrer:
 ```
-cd vps
+cd local_deploy
 # teste et choisit des ports libres si non définis
 bash setup.sh
 # lance les conteneurs
@@ -29,7 +29,7 @@ docker compose up -d --build
 
 ## Mises à jour
 ```
-cd vps
+cd local_deploy
 docker compose pull || true
 docker compose build --no-cache api
 docker compose up -d

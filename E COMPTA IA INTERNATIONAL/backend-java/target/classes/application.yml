@@ -1,0 +1,9 @@
+server:
+  port: 8080
+spring:
+  jackson:
+    serialization:
+      INDENT_OUTPUT: true
+logging:
+  level:
+    root: INFO

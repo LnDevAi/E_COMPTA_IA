@@ -110,11 +110,59 @@ public class EcrituresController {
     private void save(List<Ecriture> items) throws IOException { dataFile.getParentFile().mkdirs(); om.writeValue(dataFile, Map.of("items", items)); }
     private String genId(String p) { return p+"-"+System.currentTimeMillis()+"-"+(int)(Math.random()*1e4); }
 
-    @Data
-    public static class Ligne { private String compte; private String libelle; private double debit; private double credit; private String tiersId; private String tiersName; }
-    @Data
+    public static class Ligne {
+        private String compte;
+        private String libelle;
+        private double debit;
+        private double credit;
+        private String tiersId;
+        private String tiersName;
+
+        // Getters
+        public String getCompte() { return compte; }
+        public String getLibelle() { return libelle; }
+        public double getDebit() { return debit; }
+        public double getCredit() { return credit; }
+        public String getTiersId() { return tiersId; }
+        public String getTiersName() { return tiersName; }
+
+        // Setters
+        public void setCompte(String compte) { this.compte = compte; }
+        public void setLibelle(String libelle) { this.libelle = libelle; }
+        public void setDebit(double debit) { this.debit = debit; }
+        public void setCredit(double credit) { this.credit = credit; }
+        public void setTiersId(String tiersId) { this.tiersId = tiersId; }
+        public void setTiersName(String tiersName) { this.tiersName = tiersName; }
+    }
+
     public static class Ecriture {
-        private String id; private String date; private String journalCode; private String piece; private String reference;
-        private List<Ligne> lignes; private double totalDebit; private double totalCredit;
+        private String id;
+        private String date;
+        private String journalCode;
+        private String piece;
+        private String reference;
+        private List<Ligne> lignes;
+        private double totalDebit;
+        private double totalCredit;
+
+        // Getters
+        public String getId() { return id; }
+        public String getDate() { return date; }
+        public String getJournalCode() { return journalCode; }
+        public String getPiece() { return piece; }
+        public String getReference() { return reference; }
+        public List<Ligne> getLignes() { return lignes; }
+        public double getTotalDebit() { return totalDebit; }
+        public double getTotalCredit() { return totalCredit; }
+
+        // Setters
+        public void setId(String id) { this.id = id; }
+        public void setDate(String date) { this.date = date; }
+        public void setJournalCode(String journalCode) { this.journalCode = journalCode; }
+        public void setPiece(String piece) { this.piece = piece; }
+        public void setReference(String reference) { this.reference = reference; }
+        public void setLignes(List<Ligne> lignes) { this.lignes = lignes; }
+        public void setTotalDebit(double totalDebit) { this.totalDebit = totalDebit; }
+        public void setTotalCredit(double totalCredit) { this.totalCredit = totalCredit; }
     }
 }

@@ -62,8 +62,31 @@ public class PlanController {
         om.writeValue(dataFile, Map.of("items", items));
     }
 
-    @Data
     public static class AccountItem {
-        private String code; private String intitule; private String classe; private String parent; private String nature; private String description; private Boolean locked;
+        private String code;
+        private String intitule;
+        private String classe;
+        private String parent;
+        private String nature;
+        private String description;
+        private Boolean locked;
+
+        // Getters
+        public String getCode() { return code; }
+        public String getIntitule() { return intitule; }
+        public String getClasse() { return classe; }
+        public String getParent() { return parent; }
+        public String getNature() { return nature; }
+        public String getDescription() { return description; }
+        public Boolean getLocked() { return locked; }
+
+        // Setters
+        public void setCode(String code) { this.code = code; }
+        public void setIntitule(String intitule) { this.intitule = intitule; }
+        public void setClasse(String classe) { this.classe = classe; }
+        public void setParent(String parent) { this.parent = parent; }
+        public void setNature(String nature) { this.nature = nature; }
+        public void setDescription(String description) { this.description = description; }
+        public void setLocked(Boolean locked) { this.locked = locked; }
     }
 }

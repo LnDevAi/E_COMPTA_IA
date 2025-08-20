@@ -149,7 +149,7 @@ export class JournalsComponent {
     if (!code || !label) { this.err = 'Code et Libellé requis'; return; }
     if (!/^[A-Z0-9_-]{2,10}$/.test(code)) { this.err = 'Code invalide (2-10 caractères alphanumériques)'; return; }
     try {
-      this.js.addJournal({ code, libelle: label, type });
+      this.js.createJournal({ code, libelle: label, type });
       this.newCode = this.newLabel = '';
       this.ok = 'Journal ajouté';
     } catch (e: any) {

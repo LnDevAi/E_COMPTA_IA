@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 E COMPTA IA - Tracker de Progression Mondiale</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .progress-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .progress-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .progress-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .progress-circle {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .circle-bg {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #4ecdc4 var(--progress, 0%), #e9ecef var(--progress, 0%));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .timeline {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .day-section {
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .day-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .day-header:hover {
+            transform: translateX(5px);
+        }
+
+        .day-header.completed {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .day-header.in-progress {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            color: #333;
+        }
+
+        .day-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        .day-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .status-todo {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .status-progress {
+            background: #feca57;
+            color: #333;
+        }
+
+        .status-done {
+            background: #48dbfb;
+            color: white;
+        }
+
+        .tasks-container {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .tasks-container.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(5px);
+        }
+
+        .task-checkbox {
+            margin-right: 15px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 1rem;
+        }
+
+        .task-time {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .task-completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            color: #333;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translate(-50%, -50%) translateY(0);
+            }
+            40% {
+                transform: translate(-50%, -50%) translateY(-30px);
+            }
+            60% {
+                transform: translate(-50%, -50%) translateY(-15px);
+            }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 999;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .progress-overview {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 E COMPTA IA INTERNATIONAL</h1>
+            <p>🌍 Conquête Mondiale en 14 Jours - Tracker de Progression Temps Réel</p>
+            <div style="margin-top: 15px;">
+                <span id="currentTime" style="font-size: 1.2rem; font-weight: bold;"></span>
+            </div>
+        </div>
+
+        <div class="progress-overview">
+            <div class="progress-card">
+                <div class="progress-circle">
+                    <div class="circle-bg" style="--progress: 0%" id="globalProgress">0%</div>
+                </div>
+                <h3>🎯 Progression Globale</h3>
+                <p id="globalStats">0/168 tâches complétées</p>
+            </div>
+            
+            <div class="progress-card">
+                <div class="progress-circle">
+                    <div class="circle-bg" style="--progress: 0%" id="weekProgress">0%</div>
+                </div>
+                <h3>📅 Semaine Actuelle</h3>
+                <p id="weekStats">Semaine 1 - Jour 1</p>
+            </div>
+            
+            <div class="progress-card">
+                <div class="progress-circle">
+                    <div class="circle-bg" style="--progress: 0%" id="timeProgress">0%</div>
+                </div>
+                <h3>⏰ Temps Écoulé</h3>
+                <p id="timeStats">0 jours / 14 jours</p>
+            </div>
+            
+            <div class="progress-card">
+                <div class="progress-circle">
+                    <div class="circle-bg" style="--progress: 0%" id="velocityProgress">0%</div>
+                </div>
+                <h3>🚀 Vélocité</h3>
+                <p id="velocityStats">En avance/retard</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="startTimer()">▶️ Démarrer Mission</button>
+            <button class="btn btn-success" onclick="markDayComplete()">✅ Jour Terminé</button>
+            <button class="btn btn-warning" onclick="exportProgress()">📊 Export Progression</button>
+            <button class="btn btn-primary" onclick="resetAll()">🔄 Reset</button>
+        </div>
+
+        <div class="timeline" id="timeline">
+            <!-- Timeline sera générée dynamiquement -->
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="celebration" id="celebration">
+        <h2>🎉 FÉLICITATIONS !</h2>
+        <p>Journée terminée avec succès !</p>
+        <p>Direction conquête mondiale ! 🌍</p>
+    </div>
+
+    <script>
+        // Données de la roadmap
+        const roadmapData = [
+            {
+                day: 1,
+                title: "FONDATIONS BACKEND + ARCHITECTURE INTERNATIONALE",
+                emoji: "⚡",
+                tasks: [
+                    { text: "Setup projet Spring Boot 3.x + PostgreSQL + i18n", hours: "H1-H4", completed: false },
+                    { text: "Configuration sécurité JWT + CORS + multi-tenant", hours: "H5-H8", completed: false },
+                    { text: "Modèles Entreprise + Utilisateur + Pays/Région + JPA", hours: "H9-H12", completed: false },
+                    { text: "API Auth + CRUD Entreprise + Sélection pays", hours: "H13-H16", completed: false },
+                    { text: "Docker setup + déploiement VPS + config internationale", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 2,
+                title: "MODÈLES COMPTABLES MULTI-STANDARDS",
+                emoji: "📊",
+                tasks: [
+                    { text: "Architecture abstraite Plan Comptable + migration SYSCOHADA", hours: "H1-H4", completed: false },
+                    { text: "Factory Pattern pour standards comptables (OHADA, IFRS, GAAP)", hours: "H5-H8", completed: false },
+                    { text: "Entités Tiers + Écritures + Adaptateurs pays", hours: "H9-H12", completed: false },
+                    { text: "Relations JPA + contraintes paramétrables par pays", hours: "H13-H16", completed: false },
+                    { text: "Tests unitaires + config OHADA + base IFRS", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 3,
+                title: "APIs MÉTIER INTERNATIONALES",
+                emoji: "🛠️",
+                tasks: [
+                    { text: "API Plan Comptable dynamique (OHADA/IFRS/GAAP)", hours: "H1-H4", completed: false },
+                    { text: "API Gestion Tiers avec réglementations locales", hours: "H5-H8", completed: false },
+                    { text: "API Saisie Écritures + validation multi-standards", hours: "H9-H12", completed: false },
+                    { text: "API Journaux + contrôles par pays + devises", hours: "H13-H16", completed: false },
+                    { text: "Tests Postman + scénarios multi-pays", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 4,
+                title: "CONNEXION FRONTEND + INTERNATIONALISATION",
+                emoji: "🔗",
+                tasks: [
+                    { text: "Refactoring services Angular + i18n/l10n", hours: "H1-H4", completed: false },
+                    { text: "Intégration auth + sélection pays + tokens", hours: "H5-H8", completed: false },
+                    { text: "Connexion modules + adaptation dynamique standards", hours: "H9-H12", completed: false },
+                    { text: "Interface multi-langues + multi-devises", hours: "H13-H16", completed: false },
+                    { text: "Tests intégration + simulation pays différents", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 5,
+                title: "REPORTING INTERNATIONAL",
+                emoji: "📈",
+                tasks: [
+                    { text: "API Grands Livres + Balance générale adaptative", hours: "H1-H4", completed: false },
+                    { text: "API Dashboard + KPIs temps réel multi-pays", hours: "H5-H8", completed: false },
+                    { text: "Génération PDF multi-standards + devises", hours: "H9-H12", completed: false },
+                    { text: "Frontend reporting connecté + sélection standard", hours: "H13-H16", completed: false },
+                    { text: "Tests utilisateur + optimisations internationales", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 6,
+                title: "ASSISTANT IA MONDIAL",
+                emoji: "🤖",
+                tasks: [
+                    { text: "Intégration API OpenAI/Claude + prompts multi-standards", hours: "H1-H4", completed: false },
+                    { text: "Knowledge base OHADA + IFRS + GAAP + bases autres pays", hours: "H5-H8", completed: false },
+                    { text: "Assistant saisie adaptatif par pays", hours: "H9-H12", completed: false },
+                    { text: "Suggestions contextuelles + validation multi-réglementaire", hours: "H13-H16", completed: false },
+                    { text: "Tests IA + scénarios internationaux", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 7,
+                title: "INFRASTRUCTURE MONDIALE",
+                emoji: "🏗️",
+                tasks: [
+                    { text: "Configuration VPS optimisée multi-région", hours: "H1-H4", completed: false },
+                    { text: "Docker Compose production + orchestration", hours: "H5-H8", completed: false },
+                    { text: "Nginx + SSL + domaines internationaux", hours: "H9-H12", completed: false },
+                    { text: "Monitoring + logs + backup multi-région", hours: "H13-H16", completed: false },
+                    { text: "Tests performance + sécurité internationale", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 8,
+                title: "ÉTATS FINANCIERS MULTI-STANDARDS",
+                emoji: "💰",
+                tasks: [
+                    { text: "Factory États Financiers (OHADA, IFRS, GAAP)", hours: "H1-H4", completed: false },
+                    { text: "Bilan + Compte résultat adaptatifs par pays", hours: "H5-H8", completed: false },
+                    { text: "Génération PDF templates internationaux", hours: "H9-H12", completed: false },
+                    { text: "Frontend états dynamiques + sélection standard", hours: "H13-H16", completed: false },
+                    { text: "Validation conformité experts internationaux", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 9,
+                title: "RAPPROCHEMENTS ADAPTATIFS",
+                emoji: "🔄",
+                tasks: [
+                    { text: "Rapprochement bancaire international", hours: "H1-H4", completed: false },
+                    { text: "Lettrage comptes adaptable par pays", hours: "H5-H8", completed: false },
+                    { text: "Contrôles équilibre multi-standards", hours: "H9-H12", completed: false },
+                    { text: "Interface utilisateur rapprochements internationaux", hours: "H13-H16", completed: false },
+                    { text: "Tests validation comptable multi-pays", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 10,
+                title: "FISCALITÉ INTERNATIONALE",
+                emoji: "📋",
+                tasks: [
+                    { text: "Architecture fiscalité modulaire (TVA, IS, etc.)", hours: "H1-H4", completed: false },
+                    { text: "Templates BF/CI + base UE/USA/Canada", hours: "H5-H8", completed: false },
+                    { text: "Calculs automatiques multi-régimes fiscaux", hours: "H9-H12", completed: false },
+                    { text: "Interface déclarations adaptative pays", hours: "H13-H16", completed: false },
+                    { text: "Validation réglementaires multi-pays", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 11,
+                title: "PLATEFORME SAAS INTERNATIONALE",
+                emoji: "💳",
+                tasks: [
+                    { text: "Architecture multi-tenant international", hours: "H1-H4", completed: false },
+                    { text: "Système abonnements + paiements multi-devises", hours: "H5-H8", completed: false },
+                    { text: "Gestion permissions + conformité RGPD/CCPA", hours: "H9-H12", completed: false },
+                    { text: "Onboarding adaptatif par région", hours: "H13-H16", completed: false },
+                    { text: "Tests parcours client multi-pays", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 12,
+                title: "OPTIMISATIONS MONDIALES",
+                emoji: "⚡",
+                tasks: [
+                    { text: "Optimisations backend (cache, index) multi-région", hours: "H1-H4", completed: false },
+                    { text: "Optimisations frontend (lazy loading) i18n", hours: "H5-H8", completed: false },
+                    { text: "Tests de charge + monitoring international", hours: "H9-H12", completed: false },
+                    { text: "Correction bugs critiques multi-pays", hours: "H13-H16", completed: false },
+                    { text: "Préparation tests finaux internationaux", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 13,
+                title: "TESTS FINAUX MONDIAUX",
+                emoji: "🧪",
+                tasks: [
+                    { text: "Tests end-to-end automatisés multi-standards", hours: "H1-H4", completed: false },
+                    { text: "Tests utilisateurs finaux multi-pays", hours: "H5-H8", completed: false },
+                    { text: "Validation conformité SYSCOHADA + IFRS", hours: "H9-H12", completed: false },
+                    { text: "Documentation utilisateur internationale", hours: "H13-H16", completed: false },
+                    { text: "Préparation lancement mondial", hours: "SOIR", completed: false }
+                ]
+            },
+            {
+                day: 14,
+                title: "LANCEMENT CONQUÊTE MONDIALE",
+                emoji: "🚀",
+                tasks: [
+                    { text: "Déploiement production final multi-région", hours: "H1-H4", completed: false },
+                    { text: "Configuration monitoring production mondiale", hours: "H5-H8", completed: false },
+                    { text: "Tests post-déploiement internationaux", hours: "H9-H12", completed: false },
+                    { text: "Formation équipe + démonstration mondiale", hours: "H13-H16", completed: false },
+                    { text: "Célébration conquête mondiale ! 🌍", hours: "SOIR", completed: false }
+                ]
+            }
+        ];
+
+        let startTime = null;
+        let currentDay = 1;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProgress();
+            generateTimeline();
+            updateProgress();
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+
+        function updateClock() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('currentTime').textContent = now.toLocaleDateString('fr-FR', options);
+        }
+
+        function generateTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+
+            roadmapData.forEach((day, index) => {
+                const daySection = document.createElement('div');
+                daySection.className = 'day-section';
+                
+                const completedTasks = day.tasks.filter(task => task.completed).length;
+                const totalTasks = day.tasks.length;
+                const isCompleted = completedTasks === totalTasks;
+                const isInProgress = completedTasks > 0 && completedTasks < totalTasks;
+                
+                let statusClass = '';
+                let statusText = '';
+                if (isCompleted) {
+                    statusClass = 'completed';
+                    statusText = 'status-done';
+                } else if (isInProgress) {
+                    statusClass = 'in-progress';
+                    statusText = 'status-progress';
+                } else {
+                    statusText = 'status-todo';
+                }
+
+                daySection.innerHTML = `
+                    <div class="day-header ${statusClass}" onclick="toggleTasks(${index})">
+                        <div class="day-title">
+                            ${day.emoji} JOUR ${day.day} - ${day.title}
+                        </div>
+                        <div class="day-status">
+                            <span class="status-badge ${statusText}">
+                                ${completedTasks}/${totalTasks} ✓
+                            </span>
+                            <span style="font-size: 1.2rem;">
+                                ${isCompleted ? '✅' : isInProgress ? '🔄' : '⏸️'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="tasks-container" id="tasks-${index}">
+                        ${day.tasks.map((task, taskIndex) => `
+                            <div class="task-item ${task.completed ? 'task-completed' : ''}">
+                                <input type="checkbox" class="task-checkbox" 
+                                       ${task.completed ? 'checked' : ''} 
+                                       onchange="toggleTask(${index}, ${taskIndex})">
+                                <span class="task-text">${task.text}</span>
+                                <span class="task-time">${task.hours}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                timeline.appendChild(daySection);
+            });
+        }
+
+        function toggleTasks(dayIndex) {
+            const tasksContainer = document.getElementById(`tasks-${dayIndex}`);
+            tasksContainer.classList.toggle('active');
+        }
+
+        function toggleTask(dayIndex, taskIndex) {
+            roadmapData[dayIndex].tasks[taskIndex].completed = !roadmapData[dayIndex].tasks[taskIndex].completed;
+            saveProgress();
+            generateTimeline();
+            updateProgress();
+            
+            // Animation de célébration pour tâche complétée
+            if (roadmapData[dayIndex].tasks[taskIndex].completed) {
+                showMiniCelebration();
+            }
+        }
+
+        function updateProgress() {
+            const totalTasks = roadmapData.reduce((sum, day) => sum + day.tasks.length, 0);
+            const completedTasks = roadmapData.reduce((sum, day) => 
+                sum + day.tasks.filter(task => task.completed).length, 0);
+            
+            const globalProgress = Math.round((completedTasks / totalTasks) * 100);
+            
+            // Progression globale
+            document.getElementById('globalProgress').textContent = `${globalProgress}%`;
+            document.getElementById('globalProgress').style.setProperty('--progress', `${globalProgress}%`);
+            document.getElementById('globalStats').textContent = `${completedTasks}/${totalTasks} tâches complétées`;
+
+            // Progression semaine
+            const week = currentDay <= 7 ? 1 : 2;
+            const weekStart = week === 1 ? 0 : 7;
+            const weekEnd = week === 1 ? 7 : 14;
+            const weekTasks = roadmapData.slice(weekStart, weekEnd).reduce((sum, day) => sum + day.tasks.length, 0);
+            const weekCompleted = roadmapData.slice(weekStart, weekEnd).reduce((sum, day) => 
+                sum + day.tasks.filter(task => task.completed).length, 0);
+            const weekProgress = weekTasks > 0 ? Math.round((weekCompleted / weekTasks) * 100) : 0;
+            
+            document.getElementById('weekProgress').textContent = `${weekProgress}%`;
+            document.getElementById('weekProgress').style.setProperty('--progress', `${weekProgress}%`);
+            document.getElementById('weekStats').textContent = `Semaine ${week} - Jour ${currentDay}`;
+
+            // Progression temps
+            if (startTime) {
+                const now = new Date();
+                const elapsed = Math.floor((now - startTime) / (1000 * 60 * 60 * 24));
+                const timeProgress = Math.min(Math.round((elapsed / 14) * 100), 100);
+                
+                document.getElementById('timeProgress').textContent = `${timeProgress}%`;
+                document.getElementById('timeProgress').style.setProperty('--progress', `${timeProgress}%`);
+                document.getElementById('timeStats').textContent = `${elapsed} jours / 14 jours`;
+
+                // Vélocité (comparaison progrès vs temps)
+                const expectedProgress = Math.round((elapsed / 14) * 100);
+                const velocity = globalProgress - expectedProgress;
+                const velocityText = velocity > 0 ? `+${velocity}% En avance! 🚀` : 
+                                   velocity < 0 ? `${velocity}% En retard ⚠️` : 'Dans les temps ✅';
+                
+                document.getElementById('velocityProgress').textContent = `${Math.abs(velocity)}%`;
+                document.getElementById('velocityProgress').style.setProperty('--progress', `${Math.min(Math.abs(velocity), 100)}%`);
+                document.getElementById('velocityStats').textContent = velocityText;
+            }
+        }
+
+        function startTimer() {
+            if (!startTime) {
+                startTime = new Date();
+                saveProgress();
+                showCelebration('🚀 MISSION DÉMARRÉE !', 'Direction conquête mondiale ! 🌍');
+            }
+        }
+
+        function markDayComplete() {
+            const currentDayTasks = roadmapData[currentDay - 1].tasks;
+            const completedTasks = currentDayTasks.filter(task => task.completed).length;
+            
+            if (completedTasks === currentDayTasks.length) {
+                if (currentDay < 14) {
+                    currentDay++;
+                    saveProgress();
+                    showCelebration('🎉 JOUR TERMINÉ !', `Jour ${currentDay - 1} complété ! Direction Jour ${currentDay} ! 🚀`);
+                } else {
+                    showCelebration('🏆 MISSION ACCOMPLIE !', 'Conquête mondiale terminée ! E COMPTA IA domine le monde ! 🌍🎉');
+                }
+                updateProgress();
+            } else {
+                alert(`Il reste ${currentDayTasks.length - completedTasks} tâches à terminer pour ce jour !`);
+            }
+        }
+
+        function exportProgress() {
+            const totalTasks = roadmapData.reduce((sum, day) => sum + day.tasks.length, 0);
+            const completedTasks = roadmapData.reduce((sum, day) => 
+                sum + day.tasks.filter(task => task.completed).length, 0);
+            const globalProgress = Math.round((completedTasks / totalTasks) * 100);
+
+            const report = `
+📊 RAPPORT DE PROGRESSION E COMPTA IA
+=====================================
+Date: ${new Date().toLocaleDateString('fr-FR')}
+Progression globale: ${globalProgress}% (${completedTasks}/${totalTasks} tâches)
+Jour actuel: ${currentDay}/14
+Temps écoulé: ${startTime ? Math.floor((new Date() - startTime) / (1000 * 60 * 60 * 24)) : 0} jours
+
+DÉTAIL PAR JOUR:
+${roadmapData.map(day => {
+    const completed = day.tasks.filter(t => t.completed).length;
+    const total = day.tasks.length;
+    const percent = Math.round((completed / total) * 100);
+    return `Jour ${day.day}: ${percent}% (${completed}/${total}) - ${day.title}`;
+}).join('\n')}
+
+PROCHAINES PRIORITÉS:
+${roadmapData.find(day => day.tasks.some(t => !t.completed))?.tasks
+    .filter(t => !t.completed)
+    .slice(0, 3)
+    .map(t => `- ${t.text}`)
+    .join('\n') || 'Toutes les tâches sont terminées ! 🎉'}
+            `;
+
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `E_COMPTA_IA_Progress_${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function resetAll() {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser toute la progression ?')) {
+                roadmapData.forEach(day => {
+                    day.tasks.forEach(task => task.completed = false);
+                });
+                currentDay = 1;
+                startTime = null;
+                saveProgress();
+                generateTimeline();
+                updateProgress();
+                showCelebration('🔄 RESET EFFECTUÉ !', 'Prêt pour une nouvelle conquête ! 🚀');
+            }
+        }
+
+        function showCelebration(title, message) {
+            const celebration = document.getElementById('celebration');
+            const overlay = document.getElementById('overlay');
+            
+            celebration.innerHTML = `
+                <h2>${title}</h2>
+                <p>${message}</p>
+            `;
+            
+            overlay.style.display = 'block';
+            celebration.style.display = 'block';
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                celebration.style.display = 'none';
+            }, 3000);
+        }
+
+        function showMiniCelebration() {
+            // Effet confetti simple
+            const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#feca57', '#ff9ff3'];
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.style.position = 'fixed';
+                    confetti.style.width = '10px';
+                    confetti.style.height = '10px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.left = Math.random() * window.innerWidth + 'px';
+                    confetti.style.top = '-10px';
+                    confetti.style.borderRadius = '50%';
+                    confetti.style.zIndex = '1001';
+                    confetti.style.transition = 'all 1s ease-out';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.style.top = window.innerHeight + 'px';
+                        confetti.style.opacity = '0';
+                    }, 10);
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(confetti);
+                    }, 1000);
+                }, i * 100);
+            }
+        }
+
+        function saveProgress() {
+            const progressData = {
+                roadmapData: roadmapData,
+                currentDay: currentDay,
+                startTime: startTime
+            };
+            localStorage.setItem('ecomptaIAProgress', JSON.stringify(progressData));
+        }
+
+        function loadProgress() {
+            const saved = localStorage.getItem('ecomptaIAProgress');
+            if (saved) {
+                const progressData = JSON.parse(saved);
+                
+                // Merge saved data with current roadmap structure
+                progressData.roadmapData.forEach((savedDay, dayIndex) => {
+                    if (roadmapData[dayIndex]) {
+                        savedDay.tasks.forEach((savedTask, taskIndex) => {
+                            if (roadmapData[dayIndex].tasks[taskIndex]) {
+                                roadmapData[dayIndex].tasks[taskIndex].completed = savedTask.completed;
+                            }
+                        });
+                    }
+                });
+                
+                currentDay = progressData.currentDay || 1;
+                startTime = progressData.startTime ? new Date(progressData.startTime) : null;
+            }
+        }
+
+        // Gestion des raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveProgress();
+                        showMiniCelebration();
+                        break;
+                    case 'e':
+                        e.preventDefault();
+                        exportProgress();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            resetAll();
+                        }
+                        break;
+                }
+            }
+        });
+
+        // Auto-save toutes les 30 secondes
+        setInterval(saveProgress, 30000);
+
+        // Notification de progression
+        function checkMilestones() {
+            const totalTasks = roadmapData.reduce((sum, day) => sum + day.tasks.length, 0);
+            const completedTasks = roadmapData.reduce((sum, day) => 
+                sum + day.tasks.filter(task => task.completed).length, 0);
+            const progress = Math.round((completedTasks / totalTasks) * 100);
+
+            const milestones = [25, 50, 75, 90, 100];
+            const lastProgress = parseInt(localStorage.getItem('lastProgress') || '0');
+
+            milestones.forEach(milestone => {
+                if (progress >= milestone && lastProgress < milestone) {
+                    const messages = {
+                        25: ['🎯 25% COMPLÉTÉ !', 'Un quart du chemin parcouru ! 🚀'],
+                        50: ['⚡ MOITIÉ TERMINÉE !', 'Plus que 50% pour dominer le monde ! 🌍'],
+                        75: ['🔥 75% ACCOMPLI !', 'La ligne d\'arrivée approche ! 💪'],
+                        90: ['🏃‍♂️ 90% TERMINÉ !', 'Sprint final vers la conquête ! 🎯'],
+                        100: ['🏆 MISSION ACCOMPLIE !', 'E COMPTA IA domine le monde ! 🌍🎉']
+                    };
+                    showCelebration(messages[milestone][0], messages[milestone][1]);
+                }
+            });
+
+            localStorage.setItem('lastProgress', progress.toString());
+        }
+
+        // Vérifier les jalons à chaque mise à jour
+        const originalUpdateProgress = updateProgress;
+        updateProgress = function() {
+            originalUpdateProgress();
+            checkMilestones();
+        };
+    </script>
+</body>
+</html>
